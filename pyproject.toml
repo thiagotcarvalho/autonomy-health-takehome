@@ -10,13 +10,34 @@ dependencies = [
   "pydantic>=2.13",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
   "pytest>=9.0",
   "httpx>=0.28",
   "snakeviz>=2.2",
+  "ruff>=0.15",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["backend"]
 testpaths = ["backend/tests"]
+
+[tool.ruff]
+line-length = 80
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes (unused imports, undefined names)
+  "W",   # pycodestyle warnings
+  "I",   # isort (import order)
+  "UP",  # pyupgrade (modern syntax)
+  "B",   # flake8-bugbear (common bug patterns)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+docstring-code-format = true

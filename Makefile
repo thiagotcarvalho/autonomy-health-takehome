@@ -1,9 +1,9 @@
-.PHONY: install ingest backend frontend test clean
+.PHONY: install ingest backend frontend test lint format clean
 
 DATA_DIR ?= data/sample-bulk-fhir-datasets-1000-patients
 
 install:
-	uv sync --extra dev
+	uv sync
 	cd frontend && pnpm install
 
 ingest:
@@ -17,6 +17,12 @@ frontend:
 
 test:
 	uv run pytest -v
+
+lint:
+	uv run ruff check backend
+
+format:
+	uv run ruff format backend
 
 clean:
 	rm -f data/fhir.db data/fhir.db-* *.prof
