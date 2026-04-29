@@ -26,7 +26,7 @@ def test_init_schema_creates_indexes(tmp_path: Path):
     ).fetchall()
     names = [r[0] for r in rows]
     assert "idx_resources_patient_type" in names
-    assert "idx_resources_patient_time" in names
+    assert "idx_resources_patient_date" in names
 
 
 def test_connect_uses_row_factory(tmp_path: Path):
@@ -34,7 +34,7 @@ def test_connect_uses_row_factory(tmp_path: Path):
     conn = connect(db_path)
     init_schema(conn)
     conn.execute(
-        "INSERT INTO resources (id, type, patient_id, effective_at, json) "
+        "INSERT INTO resources (id, type, patient_id, effective_date, json) "
         "VALUES (?, ?, ?, ?, ?)",
         ("Patient/abc", "Patient", "abc", None, "{}"),
     )

@@ -32,7 +32,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
     function is safe to call repeatedly against the same database.
 
     Args:
-        conn: An open SQLite connection produced by :func:`connect`.
+        conn: An open SQLite connection produced by `connect`.
     """
     conn.executescript(SCHEMA_PATH.read_text())
     conn.commit()

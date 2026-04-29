@@ -41,8 +41,8 @@ def iter_resources(shards: Iterable[Path]) -> Iterator[dict]:
         One parsed FHIR resource dict per non-blank line.
     """
     for shard in shards:
-        with shard.open("r", encoding="utf-8") as f:
-            for line in f:
+        with shard.open("r", encoding="utf-8") as shard_file:
+            for line in shard_file:
                 line = line.strip()
                 if not line:
                     continue
