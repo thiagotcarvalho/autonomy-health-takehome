@@ -1,0 +1,1 @@
+{"resourceType":"Procedure","id":"proc1","status":"completed","subject":{"reference":"Patient/p1"},"code":{"coding":[{"system":"http://snomed.info/sct","code":"408919008","display":"Psychosocial care (regime/therapy)"}]},"performedPeriod":{"start":"2024-02-15T10:00:00Z"}}

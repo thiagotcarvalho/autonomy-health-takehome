@@ -8,7 +8,12 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "tiny"
 def test_discover_shards_groups_paths_by_resource_type():
     shards = discover_shards(FIXTURE_DIR)
 
-    assert set(shards.keys()) == {"Patient", "Condition", "Observation"}
+    assert set(shards.keys()) == {
+        "Patient",
+        "Condition",
+        "Observation",
+        "Procedure",
+    }
     assert shards["Patient"][0].name == "Patient.000.ndjson"
 
 
