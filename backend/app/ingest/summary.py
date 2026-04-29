@@ -131,7 +131,8 @@ def _bucket_resources_by_patient_and_type(
     buckets: dict[str, dict[str, list[_StoredResource]]] = {}
     cursor = conn.execute(
         "SELECT id, type, patient_id, effective_date, json "
-        "FROM resources WHERE patient_id IS NOT NULL"
+        "FROM resources WHERE patient_id IS NOT NULL "
+        "ORDER BY id"
     )
     for row in cursor:
         patient_bucket = buckets.setdefault(row["patient_id"], {})

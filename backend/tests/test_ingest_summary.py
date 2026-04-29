@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from pathlib import Path
 
@@ -103,6 +104,82 @@ class TestBuildPatientSummary:
         assert p2["has_hypertension"] is None
         assert p2["has_type2_diabetes"] is None
         assert p2["has_psych_eval"] is None
+
+    def test_bmi_tiebreaker_picks_higher_resource_id_for_same_date(
+        self, tmp_path: Path
+    ):
+        conn = connect(tmp_path / "test.db")
+        init_schema(conn)
+        same_date = "2024-03-01T10:00:00Z"
+        conn.execute(
+            "INSERT INTO resources "
+            "(id, type, patient_id, effective_date, json) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                "Patient/p1",
+                "Patient",
+                "p1",
+                None,
+                json.dumps({"resourceType": "Patient", "id": "p1"}),
+            ),
+        )
+        for observation_id, bmi_value in (
+            ("obs-A", 40.0),
+            ("obs-B", 42.0),
+        ):
+            observation = {
+                "resourceType": "Observation",
+                "id": observation_id,
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "39156-5",
+                        }
+                    ]
+                },
+                "valueQuantity": {"value": bmi_value},
+                "effectiveDateTime": same_date,
+            }
+            conn.execute(
+                "INSERT INTO resources "
+                "(id, type, patient_id, effective_date, json) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    f"Observation/{observation_id}",
+                    "Observation",
+                    "p1",
+                    same_date,
+                    json.dumps(observation),
+                ),
+            )
+        conn.commit()
+
+        build_patient_summary(conn)
+
+        p1 = _summary_row(conn, "p1")
+        assert p1["latest_bmi_evidence_id"] == "Observation/obs-B"
+        assert p1["latest_bmi"] == 42.0
+
+    def test_orphaned_resources_with_no_patient_record_are_skipped(
+        self, tmp_path: Path
+    ):
+        source_dir = tmp_path / "src"
+        source_dir.mkdir()
+        (source_dir / "Condition.000.ndjson").write_text(
+            '{"resourceType":"Condition","id":"orphan",'
+            '"subject":{"reference":"Patient/nobody"},'
+            '"code":{"coding":[{"system":"http://snomed.info/sct",'
+            '"code":"59621000","display":"Hypertension"}]}}\n'
+        )
+        conn = connect(tmp_path / "test.db")
+        init_schema(conn)
+        load_resources(conn, source_dir, types=("Patient", "Condition"))
+
+        rows_written = build_patient_summary(conn)
+
+        assert rows_written == 0
+        assert _summary_row(conn, "nobody") is None
 
     def test_re_running_replaces_previous_summary(self, tmp_path: Path):
         conn = _seeded_connection(tmp_path)

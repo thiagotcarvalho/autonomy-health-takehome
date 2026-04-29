@@ -7,7 +7,7 @@ install:
 	cd frontend && pnpm install
 
 ingest:
-	uv run python -m scripts.ingest_cli $(DATA_DIR)
+	PYTHONPATH=backend uv run python -m scripts.ingest_cli $(DATA_DIR)
 
 backend:
 	uv run uvicorn app.main:app --reload --port 8000 --app-dir backend
