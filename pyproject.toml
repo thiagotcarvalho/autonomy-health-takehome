@@ -1,0 +1,22 @@
+[project]
+name = "autonomy-health-prior-auth"
+version = "0.1.0"
+description = "FHIR prior authorization review tool"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.136",
+  "uvicorn[standard]>=0.46",
+  "anthropic>=0.97",
+  "pydantic>=2.13",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.0",
+  "httpx>=0.28",
+  "snakeviz>=2.2",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]

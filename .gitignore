@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# SQLite (rebuilt by `make ingest`)
+data/*.db
+data/*.db-*
+
+# FHIR sample dataset (downloaded externally — see README for source)
+data/sample-bulk-fhir-datasets-1000-patients/
+
+# Profiling artifacts
+*.prof
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# OS
+.DS_Store
+Thumbs.db
