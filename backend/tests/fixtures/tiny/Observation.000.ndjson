@@ -1,0 +1,1 @@
+{"resourceType":"Observation","id":"o1","subject":{"reference":"Patient/p1"},"code":{"coding":[{"system":"http://loinc.org","code":"39156-5","display":"Body mass index"}]},"valueQuantity":{"value":42.1,"unit":"kg/m2"},"effectiveDateTime":"2024-03-01T10:00:00Z"}
