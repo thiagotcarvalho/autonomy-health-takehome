@@ -37,11 +37,10 @@ function TimelineRow({entry}: {entry: TimelineEntry}) {
           <MissingValue reason="Resource has no effectiveDateTime or period.start." />
         )}
       </span>
-      <span className="w-24 shrink-0 text-muted-foreground text-xs uppercase tracking-wide">
-        {entry.type}
-      </span>
-      <span className="flex-1 truncate">{entry.display}</span>
-      <ResourceRef id={entry.resource_id} className="shrink-0" />
+      <div className="flex-1 min-w-0 space-y-0.5">
+        <p className="break-words">{entry.display}</p>
+        <ResourceRef id={entry.resource_id} showType full />
+      </div>
     </div>
   );
 }

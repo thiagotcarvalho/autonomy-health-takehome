@@ -8,6 +8,7 @@ import {cn} from '@/lib/utils';
 interface ResourceRefProps {
   id: string;
   showType?: boolean;
+  full?: boolean;
   className?: string;
 }
 
@@ -25,24 +26,25 @@ function splitReference(id: string): {type: string | null; bareId: string} {
   };
 }
 
-function formatDisplay(id: string, showType: boolean): string {
+function formatDisplay(id: string, showType: boolean, full: boolean): string {
   const {type, bareId} = splitReference(id);
-  const truncated =
-    bareId.length > TRUNCATE_THRESHOLD
-      ? bareId.slice(0, SHORT_HASH_LENGTH)
-      : bareId;
+  const visibleId =
+    full || bareId.length <= TRUNCATE_THRESHOLD
+      ? bareId
+      : bareId.slice(0, SHORT_HASH_LENGTH);
   if (showType && type) {
-    return `${type}/${truncated}`;
+    return `${type}/${visibleId}`;
   }
-  return truncated;
+  return visibleId;
 }
 
 export function ResourceRef({
   id,
   showType = false,
+  full = false,
   className,
 }: ResourceRefProps) {
-  const display = formatDisplay(id, showType);
+  const display = formatDisplay(id, showType, full);
   return (
     <Tooltip>
       <TooltipTrigger asChild>
