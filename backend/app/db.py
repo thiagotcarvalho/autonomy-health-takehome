@@ -15,6 +15,9 @@ def open_connection(db_path: Path | str) -> sqlite3.Connection:
 
     The connection uses `sqlite3.Row` as its row factory so callers can
     access columns by name, and enables foreign-key enforcement.
+    `check_same_thread=False` lets FastAPI's threadpool hand the same
+    connection between worker threads across the lifetime of a single
+    request; safe because each request owns its own connection.
 
     Args:
         db_path: Filesystem path to the SQLite database file. The file is
@@ -23,7 +26,7 @@ def open_connection(db_path: Path | str) -> sqlite3.Connection:
     Returns:
         An open SQLite connection. The caller is responsible for closing it.
     """
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
