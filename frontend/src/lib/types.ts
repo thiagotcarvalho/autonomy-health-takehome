@@ -1,9 +1,9 @@
 // Mirrors backend/app/models.py. Field names are snake_case to match the
 // JSON wire format exactly so no transformation is needed at the boundary.
 
-export type CheckStatus = "met" | "not_met" | "unknown";
+export type CheckStatus = 'met' | 'not_met' | 'unknown';
 
-export type EligibilityStatus = "eligible" | "not_eligible" | "unknown";
+export type EligibilityStatus = 'eligible' | 'not_eligible' | 'unknown';
 
 export interface CheckResult {
   requirement: string;

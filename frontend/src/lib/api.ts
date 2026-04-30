@@ -6,16 +6,28 @@ import type {
   CohortReport,
   PatientListItem,
   PatientView,
-} from "@/lib/types";
+} from '@/lib/types';
 
 class ApiError extends Error {
   status: number;
 
   constructor(status: number, message: string) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
     this.status = status;
   }
+}
+
+async function readErrorDetail(response: Response): Promise<string> {
+  try {
+    const body = await response.json();
+    if (body && typeof body.detail === 'string') {
+      return body.detail;
+    }
+  } catch {
+    // Fall through to status text if the body is not JSON.
+  }
+  return response.statusText || `HTTP ${response.status}`;
 }
 
 async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
@@ -27,22 +39,10 @@ async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function readErrorDetail(response: Response): Promise<string> {
-  try {
-    const body = await response.json();
-    if (body && typeof body.detail === "string") {
-      return body.detail;
-    }
-  } catch {
-    // Fall through to status text if the body is not JSON.
-  }
-  return response.statusText || `HTTP ${response.status}`;
-}
-
 export { ApiError };
 
 export function listPatients(signal?: AbortSignal): Promise<PatientListItem[]> {
-  return request<PatientListItem[]>("/api/patients", signal);
+  return request<PatientListItem[]>('/api/patients', signal);
 }
 
 export function getPatient(
@@ -56,5 +56,5 @@ export function getPatient(
 }
 
 export function getCohortReport(signal?: AbortSignal): Promise<CohortReport> {
-  return request<CohortReport>("/api/cohort/report", signal);
+  return request<CohortReport>('/api/cohort/report', signal);
 }
