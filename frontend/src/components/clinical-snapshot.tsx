@@ -32,22 +32,14 @@ function FactRow({label, children, evidenceId}: FactRowProps) {
 function PatientName({
   givenName,
   familyName,
-  patientId,
 }: {
   givenName: string | null;
   familyName: string | null;
-  patientId: string;
 }) {
   if (!givenName && !familyName) {
     return <MissingValue reason="No name recorded on the Patient resource." />;
   }
-  const fullName = [givenName, familyName].filter(Boolean).join(' ');
-  return (
-    <span className="flex items-center gap-2">
-      <span>{fullName}</span>
-      <ResourceRef id={patientId} />
-    </span>
-  );
+  return <span>{[givenName, familyName].filter(Boolean).join(' ')}</span>;
 }
 
 export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
@@ -58,11 +50,10 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <FactRow label="Patient">
+          <FactRow label="Patient" evidenceId={snapshot.patient_id}>
             <PatientName
               givenName={snapshot.given_name}
               familyName={snapshot.family_name}
-              patientId={snapshot.patient_id}
             />
           </FactRow>
           <FactRow label="Age">
@@ -95,14 +86,13 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
               No active conditions documented.
             </p>
           ) : (
-            <ul className="space-y-1 text-sm">
+            <ul className="space-y-1 pl-5 list-disc text-sm marker:text-foreground/60">
               {snapshot.active_conditions.map((condition) => (
-                <li
-                  key={condition.resource_id}
-                  className="flex items-baseline justify-between gap-3"
-                >
-                  <span className="truncate">{condition.display}</span>
-                  <ResourceRef id={condition.resource_id} />
+                <li key={condition.resource_id}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="truncate">{condition.display}</span>
+                    <ResourceRef id={condition.resource_id} />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -118,19 +108,18 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
               No recent procedures documented.
             </p>
           ) : (
-            <ul className="space-y-1 text-sm">
+            <ul className="space-y-1 pl-5 list-disc text-sm marker:text-foreground/60">
               {snapshot.recent_procedures.map((procedure) => (
-                <li
-                  key={procedure.resource_id}
-                  className="flex items-baseline justify-between gap-3"
-                >
-                  <span className="truncate">{procedure.display}</span>
-                  <span className="text-muted-foreground text-xs shrink-0">
-                    {procedure.date ?? (
-                      <MissingValue reason="Procedure has no effectiveDateTime or period.start." />
-                    )}
-                  </span>
-                  <ResourceRef id={procedure.resource_id} />
+                <li key={procedure.resource_id}>
+                  <div className="flex items-baseline gap-3">
+                    <span className="flex-1 truncate">{procedure.display}</span>
+                    <span className="text-muted-foreground text-xs shrink-0">
+                      {procedure.date ?? (
+                        <MissingValue reason="Procedure has no effectiveDateTime or period.start." />
+                      )}
+                    </span>
+                    <ResourceRef id={procedure.resource_id} />
+                  </div>
                 </li>
               ))}
             </ul>
