@@ -8,6 +8,7 @@ dependencies = [
   "uvicorn[standard]>=0.46",
   "anthropic>=0.97",
   "pydantic>=2.13",
+  "orjson>=3.11",
 ]
 
 [dependency-groups]

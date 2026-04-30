@@ -1,9 +1,10 @@
 """Discovery and streaming parse of FHIR bulk NDJSON shards."""
 
-import json
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
 from pathlib import Path
+
+import orjson
 
 
 def discover_shards(data_dir: Path) -> dict[str, list[Path]]:
@@ -32,7 +33,7 @@ def iter_resources(shards: Iterable[Path]) -> Iterator[dict]:
 
     Reads each shard line by line so memory stays flat regardless of the
     dataset size. Blank lines are skipped silently. Malformed JSON raises
-    `json.JSONDecodeError` from the underlying parser.
+    `orjson.JSONDecodeError` from the underlying parser.
 
     Args:
         shards: Iterable of shard paths to read in order.
@@ -46,4 +47,4 @@ def iter_resources(shards: Iterable[Path]) -> Iterator[dict]:
                 line = line.strip()
                 if not line:
                     continue
-                yield json.loads(line)
+                yield orjson.loads(line)

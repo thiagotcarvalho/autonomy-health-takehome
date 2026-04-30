@@ -6,11 +6,12 @@ single-row inserts and stdlib `json` deliberately so a follow-up
 profile-driven pass can replace the dominant cost line.
 """
 
-import json
 import logging
 import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
+
+import orjson
 
 from .extract import get_effective_date, get_patient_id, get_resource_id
 from .sources import discover_shards, iter_resources
@@ -76,7 +77,7 @@ def load_resources(
                     resource_type,
                     patient_id,
                     get_effective_date(resource),
-                    json.dumps(resource),
+                    orjson.dumps(resource).decode("utf-8"),
                 ),
             )
 

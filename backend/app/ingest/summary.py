@@ -7,11 +7,12 @@ carries the source FHIR resource ID alongside it so downstream code can
 cite the exact record.
 """
 
-import json
 import logging
 import sqlite3
 from collections.abc import Iterable
 from typing import NamedTuple
+
+import orjson
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +141,7 @@ def _bucket_resources_by_patient_and_type(
         type_bucket.append(
             _StoredResource(
                 resource_id=row["id"],
-                body=json.loads(row["json"]),
+                body=orjson.loads(row["json"]),
                 effective_date=row["effective_date"],
             )
         )
