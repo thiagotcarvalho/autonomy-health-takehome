@@ -23,9 +23,15 @@ _HYPERTENSION_SNOMED_CODES = frozenset({"59621000"})
 _TYPE2_DIABETES_SNOMED_CODES = frozenset({"44054006"})
 _PSYCH_EVAL_PROCEDURE_CODES = frozenset({"408919008", "385892002"})
 
-# The dataset does not represent weight-loss interventions, so this set
-# is empty by design — every patient resolves as `unknown` on this axis.
-# Defining the search space here keeps adding a code a one-line change.
+# Empty by design after a full audit of the dataset:
+#   - Procedure: zero weight-management or bariatric SNOMED codes
+#   - ServiceRequest: zero weight-management referrals
+#   - DocumentReference: no notes mentioning weight or bariatric
+#   - MedicationRequest: only liraglutide (RxNorm 897122), used for one
+#     patient who also has T2D — ambiguous (Victoza vs Saxenda), so
+#     not treated as weight-loss evidence to avoid silent inference.
+# Every patient resolves as `unknown` on this axis, which is the
+# honest answer for this dataset.
 _WEIGHT_LOSS_PROCEDURE_CODES: frozenset[str] = frozenset()
 
 
