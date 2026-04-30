@@ -39,8 +39,8 @@ def _evaluate_bmi_threshold(summary: PatientSummary) -> CheckResult:
             requirement=_BMI_REQUIREMENT,
             status="met",
             reason=(
-                f"Latest BMI of {summary.latest_bmi} is at or above the "
-                f"threshold of {_BMI_QUALIFYING_THRESHOLD}."
+                f"Latest BMI of {summary.latest_bmi:.1f} is at or above "
+                f"the threshold of {_BMI_QUALIFYING_THRESHOLD:.1f}."
             ),
             evidence=evidence,
         )
@@ -48,8 +48,8 @@ def _evaluate_bmi_threshold(summary: PatientSummary) -> CheckResult:
         requirement=_BMI_REQUIREMENT,
         status="not_met",
         reason=(
-            f"Latest BMI of {summary.latest_bmi} is below the threshold "
-            f"of {_BMI_QUALIFYING_THRESHOLD}."
+            f"Latest BMI of {summary.latest_bmi:.1f} is below the "
+            f"threshold of {_BMI_QUALIFYING_THRESHOLD:.1f}."
         ),
         evidence=evidence,
     )
