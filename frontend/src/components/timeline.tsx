@@ -1,10 +1,5 @@
-// Chronological view of every Observation and Procedure for one patient.
-// Reversed to descending order (newest first) so the most recent care —
-// which is typically what a prior-auth review hinges on — appears at the
-// top. The backend orders ascending; reversing here keeps the backend
-// contract untouched.
-
 import {MissingValue} from '@/components/missing-value';
+import {ResourceRef} from '@/components/resource-ref';
 import {
   Card,
   CardContent,
@@ -46,9 +41,7 @@ function TimelineRow({entry}: {entry: TimelineEntry}) {
         {entry.type}
       </span>
       <span className="flex-1 truncate">{entry.display}</span>
-      <span className="font-mono text-[11px] text-muted-foreground shrink-0">
-        {entry.resource_id}
-      </span>
+      <ResourceRef id={entry.resource_id} className="shrink-0" />
     </div>
   );
 }

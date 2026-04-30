@@ -1,7 +1,3 @@
-// Thin fetch client for the FHIR prior-authorization API. All requests are
-// relative to /api so the Vite dev proxy (vite.config.ts) forwards them to
-// the backend at :8000 in dev, and same-origin in any prod deployment.
-
 import type {PatientListItem, PatientView} from '@/lib/types';
 
 export class ApiError extends Error {

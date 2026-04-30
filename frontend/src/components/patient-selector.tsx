@@ -1,8 +1,3 @@
-// Combobox-style selector that lists every known patient. Backed by
-// shadcn's Command (search-as-you-type) inside a Popover (click to open).
-// At ~1100 patients the Command filter stays interactive without
-// virtualization.
-
 import {Check, ChevronsUpDown} from 'lucide-react';
 import {useState} from 'react';
 

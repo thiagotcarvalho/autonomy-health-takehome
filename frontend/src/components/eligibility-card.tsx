@@ -1,8 +1,4 @@
-// Deterministic eligibility verdict for one patient. Renders the overall
-// status as a prominent badge and each policy check as its own row with
-// status pill, evidence IDs, and a tooltip on every `unknown` carrying
-// the reason from the backend.
-
+import {ResourceRef} from '@/components/resource-ref';
 import {Badge} from '@/components/ui/badge';
 import {
   Card,
@@ -103,12 +99,12 @@ function CheckRow({check}: {check: CheckResult}) {
       {check.evidence.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {check.evidence.map((evidenceId) => (
-            <span
+            <ResourceRef
               key={evidenceId}
-              className="font-mono text-[11px] text-muted-foreground bg-muted/50 rounded px-1.5 py-0.5"
-            >
-              {evidenceId}
-            </span>
+              id={evidenceId}
+              showType
+              className="bg-muted/50 px-1.5 py-0.5"
+            />
           ))}
         </div>
       )}

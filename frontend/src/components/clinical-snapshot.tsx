@@ -1,8 +1,5 @@
-// Demographics + key clinical facts for one patient. Every field shows
-// either the recorded value alongside its source FHIR resource ID or the
-// `MissingValue` tooltip explaining why the value is unknown.
-
 import {MissingValue} from '@/components/missing-value';
+import {ResourceRef} from '@/components/resource-ref';
 import {
   Card,
   CardContent,
@@ -27,11 +24,7 @@ function FactRow({label, children, evidenceId}: FactRowProps) {
     <div className="flex items-baseline gap-3 text-sm">
       <span className="text-muted-foreground w-32 shrink-0">{label}</span>
       <span className="flex-1">{children}</span>
-      {evidenceId && (
-        <span className="font-mono text-[11px] text-muted-foreground">
-          {evidenceId}
-        </span>
-      )}
+      {evidenceId && <ResourceRef id={evidenceId} />}
     </div>
   );
 }
@@ -48,12 +41,11 @@ function PatientName({
   if (!givenName && !familyName) {
     return <MissingValue reason="No name recorded on the Patient resource." />;
   }
+  const fullName = [givenName, familyName].filter(Boolean).join(' ');
   return (
-    <span>
-      {givenName ?? ''} {familyName ?? ''}{' '}
-      <span className="font-mono text-[11px] text-muted-foreground ml-1">
-        {patientId}
-      </span>
+    <span className="flex items-center gap-2">
+      <span>{fullName}</span>
+      <ResourceRef id={patientId} />
     </span>
   );
 }
@@ -108,9 +100,7 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
                   className="flex items-baseline justify-between gap-3"
                 >
                   <span className="truncate">{condition.display}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground shrink-0">
-                    {condition.resource_id}
-                  </span>
+                  <ResourceRef id={condition.resource_id} />
                 </li>
               ))}
             </ul>
@@ -138,9 +128,7 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
                       <MissingValue reason="Procedure has no effectiveDateTime or period.start." />
                     )}
                   </span>
-                  <span className="font-mono text-[11px] text-muted-foreground shrink-0">
-                    {procedure.resource_id}
-                  </span>
+                  <ResourceRef id={procedure.resource_id} />
                 </li>
               ))}
             </ul>

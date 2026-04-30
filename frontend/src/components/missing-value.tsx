@@ -1,8 +1,3 @@
-// Renders the literal word "unknown" with a tooltip explaining why the
-// value is missing. Single source of truth for the take-home's
-// missing-data UX rule: never blank, never "—", never zero — always the
-// word "unknown" plus the reason behind it.
-
 import {
   Tooltip,
   TooltipContent,
