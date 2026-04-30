@@ -70,6 +70,8 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
               <MissingValue reason="No birth date recorded; age cannot be computed." />
             )}
           </FactRow>
+          {/* No evidence ID on this row: gender comes from the Patient
+              resource itself, already cited on the Patient row above. */}
           <FactRow label="Sex">
             {snapshot.sex ?? (
               <MissingValue reason="No gender recorded on the Patient resource." />

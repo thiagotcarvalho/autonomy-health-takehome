@@ -36,6 +36,8 @@ const STATUS_LABELS: Record<EligibilityStatus, string> = {
   unknown: 'Unknown',
 };
 
+// Shared between EligibilityStatus and CheckStatus — their values are
+// disjoint except for `unknown`, which intentionally maps to the same style.
 const STATUS_CLASSES: Record<EligibilityStatus | CheckStatus, string> = {
   eligible:
     'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200',
@@ -125,7 +127,10 @@ export function EligibilityCard({eligibility}: EligibilityCardProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {eligibility.checks.map((check, index) => (
-          <div key={check.requirement} className="space-y-4">
+          <div
+            key={`${index}-${check.requirement}`}
+            className="space-y-4"
+          >
             {index > 0 && <Separator />}
             <CheckRow check={check} />
           </div>
