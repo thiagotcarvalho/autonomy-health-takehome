@@ -3,6 +3,7 @@ import {useEffect, useState} from 'react';
 import {ClinicalSnapshotCard} from '@/components/clinical-snapshot';
 import {EligibilityCard} from '@/components/eligibility-card';
 import {PatientSelector} from '@/components/patient-selector';
+import {TimelineCard} from '@/components/timeline';
 import {
   Card,
   CardContent,
@@ -71,9 +72,12 @@ function ErrorView({message}: {message: string}) {
 
 function PatientReview({view}: {view: PatientView}) {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <ClinicalSnapshotCard snapshot={view.snapshot} />
-      <EligibilityCard eligibility={view.eligibility} />
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ClinicalSnapshotCard snapshot={view.snapshot} />
+        <EligibilityCard eligibility={view.eligibility} />
+      </div>
+      <TimelineCard entries={view.timeline} />
     </div>
   );
 }
