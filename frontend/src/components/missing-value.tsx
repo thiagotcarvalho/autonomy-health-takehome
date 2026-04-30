@@ -17,7 +17,12 @@ export function MissingValue({reason}: MissingValueProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="text-muted-foreground italic underline decoration-dotted underline-offset-2 cursor-help">
+        <span
+          tabIndex={0}
+          role="button"
+          aria-label={`unknown — ${reason}`}
+          className="text-muted-foreground italic underline decoration-dotted underline-offset-2 cursor-help rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           unknown
         </span>
       </TooltipTrigger>

@@ -76,7 +76,12 @@ function CheckStatusBadge({check}: {check: CheckResult}) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="cursor-help">
+        <span
+          tabIndex={0}
+          role="button"
+          aria-label={`unknown — ${check.reason}`}
+          className="cursor-help rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <StatusBadge status="unknown" label={label} />
         </span>
       </TooltipTrigger>

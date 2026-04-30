@@ -2,13 +2,9 @@
 // relative to /api so the Vite dev proxy (vite.config.ts) forwards them to
 // the backend at :8000 in dev, and same-origin in any prod deployment.
 
-import type {
-  CohortReport,
-  PatientListItem,
-  PatientView,
-} from '@/lib/types';
+import type {PatientListItem, PatientView} from '@/lib/types';
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
 
   constructor(status: number, message: string) {
@@ -31,15 +27,13 @@ async function readErrorDetail(response: Response): Promise<string> {
 }
 
 async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(path, { signal });
+  const response = await fetch(path, {signal});
   if (!response.ok) {
     const detail = await readErrorDetail(response);
     throw new ApiError(response.status, detail);
   }
   return (await response.json()) as T;
 }
-
-export { ApiError };
 
 export function listPatients(signal?: AbortSignal): Promise<PatientListItem[]> {
   return request<PatientListItem[]>('/api/patients', signal);
@@ -53,8 +47,4 @@ export function getPatient(
     `/api/patients/${encodeURIComponent(patientId)}`,
     signal,
   );
-}
-
-export function getCohortReport(signal?: AbortSignal): Promise<CohortReport> {
-  return request<CohortReport>('/api/cohort/report', signal);
 }

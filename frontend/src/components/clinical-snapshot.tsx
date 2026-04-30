@@ -84,7 +84,9 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
             )}
           </FactRow>
           <FactRow label="Latest BMI" evidenceId={snapshot.latest_bmi_evidence_id}>
-            {snapshot.latest_bmi ?? (
+            {snapshot.latest_bmi != null ? (
+              `${snapshot.latest_bmi.toFixed(1)} kg/m²`
+            ) : (
               <MissingValue reason="No BMI observation (LOINC 39156-5) found for this patient." />
             )}
           </FactRow>
@@ -132,7 +134,9 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
                 >
                   <span className="truncate">{procedure.display}</span>
                   <span className="text-muted-foreground text-xs shrink-0">
-                    {procedure.date ?? 'undated'}
+                    {procedure.date ?? (
+                      <MissingValue reason="Procedure has no effectiveDateTime or period.start." />
+                    )}
                   </span>
                   <span className="font-mono text-[11px] text-muted-foreground shrink-0">
                     {procedure.resource_id}

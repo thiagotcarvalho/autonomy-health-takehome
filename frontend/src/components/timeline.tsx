@@ -4,8 +4,6 @@
 // top. The backend orders ascending; reversing here keeps the backend
 // contract untouched.
 
-import {useMemo} from 'react';
-
 import {MissingValue} from '@/components/missing-value';
 import {
   Card,
@@ -14,7 +12,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {ScrollArea} from '@/components/ui/scroll-area';
-import {Separator} from '@/components/ui/separator';
 import type {TimelineEntry} from '@/lib/types';
 
 interface TimelineProps {
@@ -33,10 +30,6 @@ function formatDate(isoDate: string): string {
     return isoDate;
   }
   return DATE_FORMATTER.format(parsed);
-}
-
-function reverseEntries(entries: TimelineEntry[]): TimelineEntry[] {
-  return [...entries].reverse();
 }
 
 function TimelineRow({entry}: {entry: TimelineEntry}) {
@@ -61,7 +54,7 @@ function TimelineRow({entry}: {entry: TimelineEntry}) {
 }
 
 export function TimelineCard({entries}: TimelineProps) {
-  const orderedEntries = useMemo(() => reverseEntries(entries), [entries]);
+  const orderedEntries = [...entries].reverse();
 
   return (
     <Card>
@@ -83,7 +76,6 @@ export function TimelineCard({entries}: TimelineProps) {
                 <TimelineRow key={entry.resource_id} entry={entry} />
               ))}
             </div>
-            <Separator className="invisible" />
           </ScrollArea>
         )}
       </CardContent>
