@@ -49,11 +49,11 @@ def _build_display_name(
           fallback so the selector always has something to show.
 
     Returns:
-        Either `"family given"`, whichever name part is present, or the
+        Either `"given family"`, whichever name part is present, or the
         patient ID when neither name is available.
     """
     if given_name and family_name:
-        return f"{family_name} {given_name}"
+        return f"{given_name} {family_name}"
     if family_name:
         return family_name
     if given_name:
