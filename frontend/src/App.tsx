@@ -1,9 +1,12 @@
+import {ArrowLeft} from 'lucide-react';
 import {useEffect, useState} from 'react';
 
 import {ClinicalSnapshotCard} from '@/components/clinical-snapshot';
+import {CohortReportCard} from '@/components/cohort-report';
 import {EligibilityCard} from '@/components/eligibility-card';
 import {PatientSelector} from '@/components/patient-selector';
 import {TimelineCard} from '@/components/timeline';
+import {Button} from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -11,8 +14,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {ApiError, getPatient, listPatients} from '@/lib/api';
-import type {PatientListItem, PatientView} from '@/lib/types';
+import {
+  ApiError,
+  getCohortReport,
+  getPatient,
+  listPatients,
+} from '@/lib/api';
+import type {
+  CohortReport,
+  PatientListItem,
+  PatientView,
+} from '@/lib/types';
 
 type LoadState<T> =
   | {status: 'loading'}
@@ -33,21 +45,30 @@ function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
 }
 
-function EmptyState() {
+function CohortLoadingView() {
+  return (
+    <Card>
+      <CardContent className="py-8 text-muted-foreground text-sm">
+        Loading cohort report...
+      </CardContent>
+    </Card>
+  );
+}
+
+function CohortErrorView({message}: {message: string}) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Select a patient</CardTitle>
-        <CardDescription>
-          Pick a patient from the selector above to review their snapshot,
-          timeline, and eligibility verdict.
-        </CardDescription>
+        <CardTitle className="text-destructive">
+          Failed to load cohort report
+        </CardTitle>
+        <CardDescription>{message}</CardDescription>
       </CardHeader>
     </Card>
   );
 }
 
-function LoadingView() {
+function PatientLoadingView() {
   return (
     <Card>
       <CardContent className="py-8 text-muted-foreground text-sm">
@@ -57,7 +78,7 @@ function LoadingView() {
   );
 }
 
-function ErrorView({message}: {message: string}) {
+function PatientErrorView({message}: {message: string}) {
   return (
     <Card>
       <CardHeader>
@@ -73,10 +94,8 @@ function ErrorView({message}: {message: string}) {
 function PatientReview({view}: {view: PatientView}) {
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ClinicalSnapshotCard snapshot={view.snapshot} />
-        <EligibilityCard eligibility={view.eligibility} />
-      </div>
+      <ClinicalSnapshotCard snapshot={view.snapshot} />
+      <EligibilityCard eligibility={view.eligibility} />
       <TimelineCard entries={view.timeline} />
     </div>
   );
@@ -84,6 +103,9 @@ function PatientReview({view}: {view: PatientView}) {
 
 function App() {
   const [patients, setPatients] = useState<LoadState<PatientListItem[]>>({
+    status: 'loading',
+  });
+  const [cohort, setCohort] = useState<LoadState<CohortReport>>({
     status: 'loading',
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -97,6 +119,17 @@ function App() {
       .catch((error: unknown) => {
         if (isAbortError(error)) return;
         setPatients({status: 'error', message: formatErrorMessage(error)});
+      });
+    return () => abortController.abort();
+  }, []);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    getCohortReport(abortController.signal)
+      .then((data) => setCohort({status: 'ready', data}))
+      .catch((error: unknown) => {
+        if (isAbortError(error)) return;
+        setCohort({status: 'error', message: formatErrorMessage(error)});
       });
     return () => abortController.abort();
   }, []);
@@ -124,7 +157,17 @@ function App() {
           <h1 className="text-lg font-semibold tracking-tight">
             FHIR Prior Authorization Review
           </h1>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            {selectedId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedId(null)}
+              >
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                Cohort report
+              </Button>
+            )}
             {patients.status === 'loading' && (
               <span className="text-muted-foreground text-sm">
                 Loading patients...
@@ -147,12 +190,20 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
-        {!selectedId && <EmptyState />}
-        {selectedId && patientView?.status === 'loading' && <LoadingView />}
-        {selectedId && patientView?.status === 'error' && (
-          <ErrorView message={patientView.message} />
+        {!selectedId && cohort.status === 'loading' && <CohortLoadingView />}
+        {!selectedId && cohort.status === 'error' && (
+          <CohortErrorView message={cohort.message} />
         )}
-        {patientView?.status === 'ready' && (
+        {!selectedId && cohort.status === 'ready' && (
+          <CohortReportCard report={cohort.data} />
+        )}
+        {selectedId && patientView?.status === 'loading' && (
+          <PatientLoadingView />
+        )}
+        {selectedId && patientView?.status === 'error' && (
+          <PatientErrorView message={patientView.message} />
+        )}
+        {selectedId && patientView?.status === 'ready' && (
           <PatientReview view={patientView.data} />
         )}
       </main>

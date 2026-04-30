@@ -1,4 +1,8 @@
-import type {PatientListItem, PatientView} from '@/lib/types';
+import type {
+  CohortReport,
+  PatientListItem,
+  PatientView,
+} from '@/lib/types';
 
 export class ApiError extends Error {
   status: number;
@@ -43,4 +47,8 @@ export function getPatient(
     `/api/patients/${encodeURIComponent(patientId)}`,
     signal,
   );
+}
+
+export function getCohortReport(signal?: AbortSignal): Promise<CohortReport> {
+  return request<CohortReport>('/api/cohort/report', signal);
 }

@@ -55,3 +55,15 @@ export interface PatientView {
   timeline: TimelineEntry[];
   eligibility: EligibilityResult;
 }
+
+export interface CohortReason {
+  reason: string;
+  count: number;
+}
+
+export interface CohortReport {
+  total: number;
+  counts: Record<EligibilityStatus, number>;
+  percentages: Record<EligibilityStatus, number>;
+  top_unknown_reasons: CohortReason[];
+}
