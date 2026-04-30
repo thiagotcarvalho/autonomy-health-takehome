@@ -96,3 +96,46 @@ class CohortReport(BaseModel):
     counts: dict[str, int]
     percentages: dict[str, float]
     top_unknown_reasons: list[CohortReason]
+
+
+class AICheckModel(BaseModel):
+    """Mirror of `ai_assist.types.AICheck` for JSON responses."""
+
+    requirement: str
+    status: CheckStatus
+    reason: str
+    evidence: list[str]
+
+
+class AIAssessmentModel(BaseModel):
+    """Mirror of `ai_assist.types.AIAssessment` for JSON responses."""
+
+    status: EligibilityStatus
+    reasoning: str
+    checks: list[AICheckModel]
+
+
+class CheckDisagreementModel(BaseModel):
+    """One per-check status mismatch between AI and deterministic."""
+
+    requirement: str
+    deterministic_status: CheckStatus
+    ai_status: CheckStatus
+
+
+class ReconciliationModel(BaseModel):
+    """Differences between the AI assessment and the deterministic verdict."""
+
+    verdict_agrees: bool
+    deterministic_status: EligibilityStatus
+    ai_status: EligibilityStatus
+    check_disagreements: list[CheckDisagreementModel]
+    hallucinated_evidence: list[str]
+
+
+class AIAssistResponse(BaseModel):
+    """Combined AI Assist response: AI + deterministic + reconciliation."""
+
+    ai: AIAssessmentModel
+    deterministic: EligibilityResultModel
+    reconciliation: ReconciliationModel

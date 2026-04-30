@@ -1,23 +1,28 @@
-"""Patient endpoints: selector list and per-patient review payload.
+"""Patient endpoints: selector list, per-patient review, AI Assist.
 
 The list endpoint powers the UI selector. The detail endpoint assembles
 the three regions a clinician needs in one round-trip — snapshot
 demographics, the chronological timeline, and the deterministic
 eligibility verdict — so the frontend can render a full review without
-a follow-up query.
+a follow-up query. The AI Assist endpoint runs the model-grounded
+review; deterministic verdict still wins, but the AI's read is
+surfaced alongside.
 """
 
+import dataclasses
 import sqlite3
-from datetime import date
 
 import orjson
 from fastapi import APIRouter, HTTPException
 
+from ..ai_assist.client import AIAssistCallFailed, AIAssistNotConfigured
+from ..ai_assist.service import PatientNotFound, assist
 from ..db import DbConn
 from ..eligibility.evaluate import evaluate
 from ..eligibility.store import load_summary
 from ..eligibility.types import PatientSummary
 from ..models import (
+    AIAssistResponse,
     CheckResultModel,
     ClinicalSnapshot,
     ConditionEntry,
@@ -27,6 +32,7 @@ from ..models import (
     ProcedureEntry,
     TimelineEntry,
 )
+from ..util import compute_age
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
 
@@ -86,21 +92,6 @@ def _resolve_display(resource_body: dict) -> str:
     return "(unknown)"
 
 
-def _compute_age(birth_date: str | None) -> int | None:
-    if not birth_date:
-        return None
-    try:
-        parsed_birth_date = date.fromisoformat(birth_date)
-    except ValueError:
-        return None
-    today = date.today()
-    had_birthday = (today.month, today.day) >= (
-        parsed_birth_date.month,
-        parsed_birth_date.day,
-    )
-    return today.year - parsed_birth_date.year - (0 if had_birthday else 1)
-
-
 def _query_active_conditions(
     conn: sqlite3.Connection, patient_id: str
 ) -> list[ConditionEntry]:
@@ -151,7 +142,7 @@ def _build_snapshot(
         patient_id=summary.patient_id,
         given_name=summary.given_name,
         family_name=summary.family_name,
-        age=_compute_age(summary.birth_date),
+        age=compute_age(summary.birth_date),
         sex=summary.sex,
         latest_bmi=summary.latest_bmi,
         latest_bmi_evidence_id=summary.latest_bmi_evidence_id,
@@ -256,3 +247,51 @@ def get_patient_view(patient_id: str, conn: DbConn) -> PatientView:
         timeline=_build_timeline(conn, patient_id),
         eligibility=_serialize_eligibility(summary),
     )
+
+
+@router.post("/{patient_id}/ai-assist", response_model=AIAssistResponse)
+def get_ai_assist(patient_id: str, conn: DbConn) -> AIAssistResponse:
+    """Runs the AI Assist pipeline for one patient.
+
+    Builds the patient context from the deterministic summary and
+    nearby resources, calls the model with a strict tool schema,
+    reconciles the AI assessment against the deterministic verdict,
+    and returns the combined response. Deterministic always wins;
+    disagreements are surfaced for the reviewer.
+
+    Args:
+        patient_id: Bare FHIR Patient `id`.
+        conn: Per-request SQLite connection from `get_db`.
+
+    Returns:
+        An `AIAssistResponse` with the AI assessment, deterministic
+        verdict, and reconciliation.
+
+    Raises:
+        HTTPException: 404 when the patient is unknown, 503 when AI
+          Assist is not configured (no API key), 502 when the model
+          API call fails.
+    """
+    try:
+        result = assist(conn, patient_id)
+    except PatientNotFound as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Patient {exc} not found",
+        ) from exc
+    except AIAssistNotConfigured as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "AI Assist is not configured (ANTHROPIC_API_KEY missing). "
+                "The deterministic verdict is still available via "
+                "GET /api/patients/{id}."
+            ),
+        ) from exc
+    except AIAssistCallFailed as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI Assist call failed: {exc}",
+        ) from exc
+
+    return AIAssistResponse.model_validate(dataclasses.asdict(result))

@@ -1,6 +1,7 @@
 .PHONY: install ingest backend frontend test lint format clean
 
 DATA_DIR ?= data/sample-bulk-fhir-datasets-1000-patients
+ENV_FILE := $(if $(wildcard .env),--env-file .env,)
 
 install:
 	uv sync
@@ -10,7 +11,7 @@ ingest:
 	PYTHONPATH=backend uv run python -m scripts.ingest_cli $(DATA_DIR)
 
 backend:
-	uv run uvicorn app.main:app --reload --port 8000 --app-dir backend
+	uv run $(ENV_FILE) uvicorn app.main:app --reload --port 8000 --app-dir backend
 
 frontend:
 	cd frontend && npm run dev

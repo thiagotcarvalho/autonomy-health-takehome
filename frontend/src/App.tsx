@@ -15,35 +15,18 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  ApiError,
+  formatErrorMessage,
   getCohortReport,
   getPatient,
+  isAbortError,
   listPatients,
 } from '@/lib/api';
 import type {
   CohortReport,
+  LoadState,
   PatientListItem,
   PatientView,
 } from '@/lib/types';
-
-type LoadState<T> =
-  | {status: 'loading'}
-  | {status: 'error'; message: string}
-  | {status: 'ready'; data: T};
-
-function formatErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return `${error.status}: ${error.message}`;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Unknown error';
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError';
-}
 
 function CohortLoadingView() {
   return (
@@ -95,7 +78,10 @@ function PatientReview({view}: {view: PatientView}) {
   return (
     <div className="space-y-6">
       <ClinicalSnapshotCard snapshot={view.snapshot} />
-      <EligibilityCard eligibility={view.eligibility} />
+      <EligibilityCard
+        eligibility={view.eligibility}
+        patientId={view.snapshot.patient_id}
+      />
       <TimelineCard entries={view.timeline} />
     </div>
   );

@@ -1,5 +1,10 @@
+import {AIAssistDialog} from '@/components/ai-assist-dialog';
+import {
+  CHECK_STATUS_LABELS,
+  STATUS_LABELS,
+  StatusBadge,
+} from '@/components/eligibility-status';
 import {ResourceRef} from '@/components/resource-ref';
-import {Badge} from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -7,59 +12,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {Separator} from '@/components/ui/separator';
-import type {
-  CheckResult,
-  CheckStatus,
-  EligibilityResult,
-  EligibilityStatus,
-} from '@/lib/types';
-import {cn} from '@/lib/utils';
+import type {CheckResult, EligibilityResult} from '@/lib/types';
 
 interface EligibilityCardProps {
   eligibility: EligibilityResult;
-}
-
-interface StatusBadgeProps {
-  status: EligibilityStatus | CheckStatus;
-  label: string;
-  className?: string;
-}
-
-const STATUS_LABELS: Record<EligibilityStatus, string> = {
-  eligible: 'Eligible',
-  not_eligible: 'Not Eligible',
-  unknown: 'Unknown',
-};
-
-const CHECK_STATUS_LABELS: Record<CheckStatus, string> = {
-  met: 'Met',
-  not_met: 'Not Met',
-  unknown: 'Unknown',
-};
-
-// Shared between EligibilityStatus and CheckStatus — their values are
-// disjoint except for `unknown`, which intentionally maps to the same style.
-const STATUS_CLASSES: Record<EligibilityStatus | CheckStatus, string> = {
-  eligible:
-    'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200',
-  met:
-    'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200',
-  not_eligible:
-    'bg-destructive/10 text-destructive dark:bg-destructive/20',
-  not_met:
-    'bg-destructive/10 text-destructive dark:bg-destructive/20',
-  unknown: 'bg-muted text-muted-foreground',
-};
-
-function StatusBadge({status, label, className}: StatusBadgeProps) {
-  return (
-    <Badge
-      variant="outline"
-      className={cn('border-transparent', STATUS_CLASSES[status], className)}
-    >
-      {label}
-    </Badge>
-  );
+  patientId: string;
 }
 
 function CheckRow({check}: {check: CheckResult}) {
@@ -105,16 +62,19 @@ function UnknownVerdictExplanation({reasons}: {reasons: string[]}) {
   );
 }
 
-export function EligibilityCard({eligibility}: EligibilityCardProps) {
+export function EligibilityCard({eligibility, patientId}: EligibilityCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle>Eligibility</CardTitle>
-        <StatusBadge
-          status={eligibility.status}
-          label={STATUS_LABELS[eligibility.status]}
-          className="text-sm h-6 px-3"
-        />
+        <div className="flex items-center gap-3">
+          <AIAssistDialog patientId={patientId} />
+          <StatusBadge
+            status={eligibility.status}
+            label={STATUS_LABELS[eligibility.status]}
+            className="text-sm h-6 px-3"
+          />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {eligibility.status === 'unknown' && (

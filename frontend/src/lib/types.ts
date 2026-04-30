@@ -67,3 +67,45 @@ export interface CohortReport {
   percentages: Record<EligibilityStatus, number>;
   top_unknown_reasons: CohortReason[];
 }
+
+// AI Assist — separate types from CheckResult/EligibilityResult on
+// purpose. The AI's `met` is a model claim that may be wrong; the
+// deterministic layer's `met` is a guarantee.
+
+export interface AICheckResult {
+  requirement: string;
+  status: CheckStatus;
+  reason: string;
+  evidence: string[];
+}
+
+export interface AIAssessment {
+  status: EligibilityStatus;
+  reasoning: string;
+  checks: AICheckResult[];
+}
+
+export interface CheckDisagreement {
+  requirement: string;
+  deterministic_status: CheckStatus;
+  ai_status: CheckStatus;
+}
+
+export interface Reconciliation {
+  verdict_agrees: boolean;
+  deterministic_status: EligibilityStatus;
+  ai_status: EligibilityStatus;
+  check_disagreements: CheckDisagreement[];
+  hallucinated_evidence: string[];
+}
+
+export interface AIAssistResponse {
+  ai: AIAssessment;
+  deterministic: EligibilityResult;
+  reconciliation: Reconciliation;
+}
+
+export type LoadState<T> =
+  | {status: 'loading'}
+  | {status: 'error'; message: string}
+  | {status: 'ready'; data: T};
