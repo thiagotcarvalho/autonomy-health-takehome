@@ -1,5 +1,7 @@
 import {useEffect, useState} from 'react';
 
+import {ClinicalSnapshotCard} from '@/components/clinical-snapshot';
+import {EligibilityCard} from '@/components/eligibility-card';
 import {PatientSelector} from '@/components/patient-selector';
 import {
   Card,
@@ -67,33 +69,12 @@ function ErrorView({message}: {message: string}) {
   );
 }
 
-function PatientPlaceholder({view}: {view: PatientView}) {
-  const {snapshot, timeline, eligibility} = view;
+function PatientReview({view}: {view: PatientView}) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          {snapshot.given_name} {snapshot.family_name}
-        </CardTitle>
-        <CardDescription className="font-mono text-xs">
-          {snapshot.patient_id}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
-        <p>
-          Eligibility:{' '}
-          <span className="font-medium text-foreground">
-            {eligibility.status}
-          </span>{' '}
-          ({eligibility.checks.length} checks)
-        </p>
-        <p>
-          Active conditions: {snapshot.active_conditions.length} · Recent
-          procedures: {snapshot.recent_procedures.length} · Timeline entries:{' '}
-          {timeline.length}
-        </p>
-      </CardContent>
-    </Card>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <ClinicalSnapshotCard snapshot={view.snapshot} />
+      <EligibilityCard eligibility={view.eligibility} />
+    </div>
   );
 }
 
@@ -168,7 +149,7 @@ function App() {
           <ErrorView message={patientView.message} />
         )}
         {patientView?.status === 'ready' && (
-          <PatientPlaceholder view={patientView.data} />
+          <PatientReview view={patientView.data} />
         )}
       </main>
     </div>
