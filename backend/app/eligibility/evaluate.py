@@ -117,12 +117,13 @@ def _evaluate_comorbidity(summary: PatientSummary) -> CheckResult:
 
 
 def _evaluate_psych_eval(summary: PatientSummary) -> CheckResult:
+    evidence = _evidence_list(summary.psych_eval_evidence_id)
     if summary.has_psych_eval and summary.psych_eval_evidence_id:
         return CheckResult(
             requirement=_PSYCH_EVAL_REQUIREMENT,
             status="met",
             reason="Psychological evaluation documented for this patient.",
-            evidence=[summary.psych_eval_evidence_id],
+            evidence=evidence,
         )
     return CheckResult(
         requirement=_PSYCH_EVAL_REQUIREMENT,
@@ -130,11 +131,12 @@ def _evaluate_psych_eval(summary: PatientSummary) -> CheckResult:
         reason=(
             "No psychological evaluation documentation found for this patient."
         ),
-        evidence=[],
+        evidence=evidence,
     )
 
 
 def _evaluate_weight_loss(summary: PatientSummary) -> CheckResult:
+    evidence = _evidence_list(summary.weight_loss_evidence_id)
     if summary.has_weight_loss_evidence and summary.weight_loss_evidence_id:
         return CheckResult(
             requirement=_WEIGHT_LOSS_REQUIREMENT,
@@ -143,7 +145,7 @@ def _evaluate_weight_loss(summary: PatientSummary) -> CheckResult:
                 "Prior weight-loss attempt documentation found for this "
                 "patient."
             ),
-            evidence=[summary.weight_loss_evidence_id],
+            evidence=evidence,
         )
     return CheckResult(
         requirement=_WEIGHT_LOSS_REQUIREMENT,
@@ -151,7 +153,7 @@ def _evaluate_weight_loss(summary: PatientSummary) -> CheckResult:
         reason=(
             "No prior weight-loss attempt documentation found for this patient."
         ),
-        evidence=[],
+        evidence=evidence,
     )
 
 

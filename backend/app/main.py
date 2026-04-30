@@ -2,8 +2,7 @@
 
 Wires the lifespan hook (logging + startup warnings), the global
 exception handler that sanitizes 500s without swallowing FastAPI's own
-4xx flow, and the per-feature routers under `/api/*` plus the
-`/health` liveness probe.
+4xx flow, and the per-feature routers under `/api/*`.
 """
 
 import logging
@@ -86,13 +85,3 @@ async def handle_unhandled_exception(
         status_code=500,
         content={"detail": "internal server error"},
     )
-
-
-@app.get("/health")
-def get_health() -> dict[str, str]:
-    """Returns a static liveness payload for uptime checks.
-
-    Returns:
-        A small dict with `status: "ok"`.
-    """
-    return {"status": "ok"}

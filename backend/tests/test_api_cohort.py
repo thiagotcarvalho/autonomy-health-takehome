@@ -2,24 +2,27 @@
 
 
 class TestGetCohortReport:
-    def test_returns_aggregate_shape_with_all_three_statuses(
+    def test_returns_expected_counts_for_seeded_cohort(
         self, seeded_test_client
     ):
         response = seeded_test_client.get("/api/cohort/report")
         assert response.status_code == 200
         body = response.json()
         assert body["total"] == 2
-        assert set(body["counts"].keys()) == {
-            "eligible",
-            "not_eligible",
-            "unknown",
+        assert body["counts"] == {
+            "eligible": 0,
+            "not_eligible": 0,
+            "unknown": 2,
         }
-        assert set(body["percentages"].keys()) == {
-            "eligible",
-            "not_eligible",
-            "unknown",
+        assert body["percentages"] == {
+            "eligible": 0.0,
+            "not_eligible": 0.0,
+            "unknown": 100.0,
         }
-        assert isinstance(body["top_unknown_reasons"], list)
+        assert any(
+            "weight-loss" in entry["reason"]
+            for entry in body["top_unknown_reasons"]
+        )
 
     def test_returns_zeros_for_empty_cohort(self, empty_test_client):
         response = empty_test_client.get("/api/cohort/report")

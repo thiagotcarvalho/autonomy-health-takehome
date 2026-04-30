@@ -172,10 +172,9 @@ def _is_active_condition(condition_body: dict) -> bool:
     clinical_status_codings = (condition_body.get("clinicalStatus") or {}).get(
         "coding"
     ) or []
-    if not clinical_status_codings:
-        return True
-    first_code = clinical_status_codings[0].get("code")
-    return first_code in (None, "active")
+    return any(
+        coding.get("code") == "active" for coding in clinical_status_codings
+    )
 
 
 def _resolve_display(resource_body: dict) -> str:

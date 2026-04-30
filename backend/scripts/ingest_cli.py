@@ -29,7 +29,7 @@ Exit codes:
     2 — recoverable ingest failures: filesystem (`OSError`), SQLite
         (`sqlite3.Error`), or malformed NDJSON (`orjson.JSONDecodeError`).
         Programming bugs (e.g. `AttributeError`) are intentionally not
-        caught — they propagate with a full traceback.
+        caught and propagate with a full traceback.
 """
 
 import argparse

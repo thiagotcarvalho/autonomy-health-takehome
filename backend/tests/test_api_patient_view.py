@@ -28,11 +28,11 @@ class TestGetPatientView:
             for entry in body["timeline"]
         )
 
-        assert body["eligibility"]["status"] in {
-            "eligible",
-            "not_eligible",
-            "unknown",
-        }
+        eligibility = body["eligibility"]
+        assert eligibility["status"] == "unknown"
+        assert any(
+            "weight-loss" in reason for reason in eligibility["unknown_reasons"]
+        )
 
     def test_returns_404_for_unknown_patient(self, seeded_test_client):
         response = seeded_test_client.get("/api/patients/does-not-exist")
@@ -43,7 +43,7 @@ class TestGetPatientView:
         self, tmp_path: Path, monkeypatch
     ):
         database_path = tmp_path / "fhir.db"
-        _seed_two_conditions(database_path)
+        _seed_conditions_with_varied_statuses(database_path)
         monkeypatch.setenv("FHIR_DB_PATH", str(database_path))
         import app.main as main_module
 
@@ -58,13 +58,16 @@ class TestGetPatientView:
         ]
         assert "Condition/active-one" in active_ids
         assert "Condition/resolved-one" not in active_ids
+        assert "Condition/missing-status" not in active_ids
 
 
-def _seed_two_conditions(database_path: Path) -> None:
-    """Seeds a minimal DB with one active and one resolved condition.
+def _seed_conditions_with_varied_statuses(database_path: Path) -> None:
+    """Seeds a minimal DB with active, resolved, and status-less conditions.
 
-    Bypasses the loader so we can inject a `clinicalStatus.coding[0].code`
-    of `resolved`, which the tiny fixture does not exercise.
+    Bypasses the loader so we can inject `clinicalStatus.coding[0].code`
+    values the tiny fixture does not exercise — `resolved`, plus a
+    Condition with no `clinicalStatus` at all (treated as unknown, not
+    active, per the codebase's missing-data policy).
     """
     conn = connect(database_path)
     init_schema(conn)
@@ -86,30 +89,31 @@ def _seed_two_conditions(database_path: Path) -> None:
         "code": {"text": "Resolved condition"},
         "clinicalStatus": {"coding": [{"code": "resolved"}]},
     }
+    missing_status_condition_body = {
+        "resourceType": "Condition",
+        "id": "missing-status",
+        "subject": {"reference": "Patient/p1"},
+        "code": {"text": "Condition with no clinicalStatus"},
+    }
     insert_resource_sql = (
         "INSERT INTO resources "
         "(id, type, patient_id, effective_date, json) "
         "VALUES (?, ?, ?, ?, ?)"
     )
-    conn.execute(
-        insert_resource_sql,
-        (
-            "Condition/active-one",
-            "Condition",
-            "p1",
-            None,
-            json.dumps(active_condition_body),
-        ),
-    )
-    conn.execute(
-        insert_resource_sql,
-        (
-            "Condition/resolved-one",
-            "Condition",
-            "p1",
-            None,
-            json.dumps(resolved_condition_body),
-        ),
-    )
+    for resource_id, condition_body in (
+        ("Condition/active-one", active_condition_body),
+        ("Condition/resolved-one", resolved_condition_body),
+        ("Condition/missing-status", missing_status_condition_body),
+    ):
+        conn.execute(
+            insert_resource_sql,
+            (
+                resource_id,
+                "Condition",
+                "p1",
+                None,
+                json.dumps(condition_body),
+            ),
+        )
     conn.commit()
     conn.close()

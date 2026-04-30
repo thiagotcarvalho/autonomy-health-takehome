@@ -127,7 +127,12 @@ class TestBuildCohortReport:
             "not_eligible": 25.0,
             "unknown": 50.0,
         }
-        assert isinstance(report["top_unknown_reasons"], list)
+        weight_loss_entry = next(
+            entry
+            for entry in report["top_unknown_reasons"]
+            if "weight-loss" in entry["reason"]
+        )
+        assert weight_loss_entry["count"] == 3
 
     def test_top_unknown_reasons_orders_by_count_descending(
         self, tmp_path: Path
