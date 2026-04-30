@@ -7,11 +7,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {Separator} from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import type {
   CheckResult,
   CheckStatus,
@@ -33,6 +28,12 @@ interface StatusBadgeProps {
 const STATUS_LABELS: Record<EligibilityStatus, string> = {
   eligible: 'Eligible',
   not_eligible: 'Not Eligible',
+  unknown: 'Unknown',
+};
+
+const CHECK_STATUS_LABELS: Record<CheckStatus, string> = {
+  met: 'Met',
+  not_met: 'Not Met',
   unknown: 'Unknown',
 };
 
@@ -61,43 +62,17 @@ function StatusBadge({status, label, className}: StatusBadgeProps) {
   );
 }
 
-function CheckStatusBadge({check}: {check: CheckResult}) {
-  const label =
-    check.status === 'met'
-      ? 'Met'
-      : check.status === 'not_met'
-        ? 'Not Met'
-        : 'Unknown';
-  if (check.status !== 'unknown') {
-    return <StatusBadge status={check.status} label={label} />;
-  }
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          tabIndex={0}
-          role="button"
-          aria-label={`unknown — ${check.reason}`}
-          className="cursor-help rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <StatusBadge status="unknown" label={label} />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs">{check.reason}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 function CheckRow({check}: {check: CheckResult}) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-medium">{check.requirement}</span>
-        <CheckStatusBadge check={check} />
+        <StatusBadge
+          status={check.status}
+          label={CHECK_STATUS_LABELS[check.status]}
+        />
       </div>
-      {check.status !== 'unknown' && (
-        <p className="text-sm text-muted-foreground">{check.reason}</p>
-      )}
+      <p className="text-sm text-muted-foreground">{check.reason}</p>
       {check.evidence.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {check.evidence.map((evidenceId) => (
@@ -114,6 +89,22 @@ function CheckRow({check}: {check: CheckResult}) {
   );
 }
 
+function UnknownVerdictExplanation({reasons}: {reasons: string[]}) {
+  if (reasons.length === 0) return null;
+  return (
+    <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+      <p className="font-medium mb-1.5">
+        Classified as <span className="italic">Unknown</span> because:
+      </p>
+      <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
+        {reasons.map((reason, index) => (
+          <li key={`${index}-${reason}`}>{reason}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function EligibilityCard({eligibility}: EligibilityCardProps) {
   return (
     <Card>
@@ -126,6 +117,9 @@ export function EligibilityCard({eligibility}: EligibilityCardProps) {
         />
       </CardHeader>
       <CardContent className="space-y-4">
+        {eligibility.status === 'unknown' && (
+          <UnknownVerdictExplanation reasons={eligibility.unknown_reasons} />
+        )}
         {eligibility.checks.map((check, index) => (
           <div
             key={`${index}-${check.requirement}`}
