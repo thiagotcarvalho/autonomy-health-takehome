@@ -54,6 +54,98 @@ _INSERT_SUMMARY_SQL = (
 )
 
 
+def _get_codings(resource_body: dict) -> list[dict]:
+    return (resource_body.get("code") or {}).get("coding") or []
+
+
+def _presence_flag(evidence_id: str | None) -> int | None:
+    return None if evidence_id is None else 1
+
+
+def _bucket_resources_by_patient_and_type(
+    conn: sqlite3.Connection,
+) -> dict[str, dict[str, list[_StoredResource]]]:
+    buckets: dict[str, dict[str, list[_StoredResource]]] = {}
+    cursor = conn.execute(
+        "SELECT id, type, patient_id, effective_date, json "
+        "FROM resources WHERE patient_id IS NOT NULL "
+        "ORDER BY id"
+    )
+    for row in cursor:
+        patient_bucket = buckets.setdefault(row["patient_id"], {})
+        type_bucket = patient_bucket.setdefault(row["type"], [])
+        type_bucket.append(
+            _StoredResource(
+                resource_id=row["id"],
+                body=orjson.loads(row["json"]),
+                effective_date=row["effective_date"],
+            )
+        )
+    return buckets
+
+
+def _extract_demographics(patient_record: dict) -> dict[str, str | None]:
+    primary_name = (patient_record.get("name") or [{}])[0]
+    given_names = primary_name.get("given") or [None]
+    return {
+        "given_name": given_names[0],
+        "family_name": primary_name.get("family"),
+        "birth_date": patient_record.get("birthDate"),
+        "sex": patient_record.get("gender"),
+    }
+
+
+def _find_latest_bmi(
+    observations: Iterable[_StoredResource],
+) -> tuple[float | None, str | None, str | None]:
+    candidates: list[tuple[str, str, float]] = []
+    for observation in observations:
+        codings = _get_codings(observation.body)
+        if not any(c.get("code") == _BMI_LOINC_CODE for c in codings):
+            continue
+        bmi_value = (observation.body.get("valueQuantity") or {}).get("value")
+        if bmi_value is None:
+            continue
+        candidates.append(
+            (
+                observation.effective_date or "",
+                observation.resource_id,
+                bmi_value,
+            )
+        )
+    if not candidates:
+        return None, None, None
+    candidates.sort()
+    latest_date, latest_id, latest_value = candidates[-1]
+    return latest_value, (latest_date or None), latest_id
+
+
+def _find_condition_with_codes(
+    conditions: Iterable[_StoredResource],
+    target_codes: frozenset[str],
+) -> str | None:
+    if not target_codes:
+        return None
+    for condition in conditions:
+        codings = _get_codings(condition.body)
+        if any(coding.get("code") in target_codes for coding in codings):
+            return condition.resource_id
+    return None
+
+
+def _find_procedure_with_codes(
+    procedures: Iterable[_StoredResource],
+    target_codes: frozenset[str],
+) -> str | None:
+    if not target_codes:
+        return None
+    for procedure in procedures:
+        codings = _get_codings(procedure.body)
+        if any(coding.get("code") in target_codes for coding in codings):
+            return procedure.resource_id
+    return None
+
+
 def build_patient_summary(conn: sqlite3.Connection) -> int:
     """Populates `patient_summary` from the contents of `resources`.
 
@@ -124,95 +216,3 @@ def build_patient_summary(conn: sqlite3.Connection) -> int:
 
     conn.commit()
     return rows_written
-
-
-def _bucket_resources_by_patient_and_type(
-    conn: sqlite3.Connection,
-) -> dict[str, dict[str, list[_StoredResource]]]:
-    buckets: dict[str, dict[str, list[_StoredResource]]] = {}
-    cursor = conn.execute(
-        "SELECT id, type, patient_id, effective_date, json "
-        "FROM resources WHERE patient_id IS NOT NULL "
-        "ORDER BY id"
-    )
-    for row in cursor:
-        patient_bucket = buckets.setdefault(row["patient_id"], {})
-        type_bucket = patient_bucket.setdefault(row["type"], [])
-        type_bucket.append(
-            _StoredResource(
-                resource_id=row["id"],
-                body=orjson.loads(row["json"]),
-                effective_date=row["effective_date"],
-            )
-        )
-    return buckets
-
-
-def _extract_demographics(patient_record: dict) -> dict[str, str | None]:
-    primary_name = (patient_record.get("name") or [{}])[0]
-    given_names = primary_name.get("given") or [None]
-    return {
-        "given_name": given_names[0],
-        "family_name": primary_name.get("family"),
-        "birth_date": patient_record.get("birthDate"),
-        "sex": patient_record.get("gender"),
-    }
-
-
-def _find_latest_bmi(
-    observations: Iterable[_StoredResource],
-) -> tuple[float | None, str | None, str | None]:
-    candidates: list[tuple[str, str, float]] = []
-    for observation in observations:
-        codings = _get_codings(observation.body)
-        if not any(c.get("code") == _BMI_LOINC_CODE for c in codings):
-            continue
-        bmi_value = (observation.body.get("valueQuantity") or {}).get("value")
-        if bmi_value is None:
-            continue
-        candidates.append(
-            (
-                observation.effective_date or "",
-                observation.resource_id,
-                bmi_value,
-            )
-        )
-    if not candidates:
-        return None, None, None
-    candidates.sort(key=lambda triple: (triple[0], triple[1]))
-    latest_date, latest_id, latest_value = candidates[-1]
-    return latest_value, (latest_date or None), latest_id
-
-
-def _find_condition_with_codes(
-    conditions: Iterable[_StoredResource],
-    target_codes: frozenset[str],
-) -> str | None:
-    if not target_codes:
-        return None
-    for condition in conditions:
-        codings = _get_codings(condition.body)
-        if any(coding.get("code") in target_codes for coding in codings):
-            return condition.resource_id
-    return None
-
-
-def _find_procedure_with_codes(
-    procedures: Iterable[_StoredResource],
-    target_codes: frozenset[str],
-) -> str | None:
-    if not target_codes:
-        return None
-    for procedure in procedures:
-        codings = _get_codings(procedure.body)
-        if any(coding.get("code") in target_codes for coding in codings):
-            return procedure.resource_id
-    return None
-
-
-def _get_codings(resource_body: dict) -> list[dict]:
-    return (resource_body.get("code") or {}).get("coding") or []
-
-
-def _presence_flag(evidence_id: str | None) -> int | None:
-    return None if evidence_id is None else 1

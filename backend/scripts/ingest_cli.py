@@ -40,7 +40,7 @@ import time
 from pathlib import Path
 
 import orjson
-from app.db import connect, init_schema
+from app.db import init_schema, open_connection
 from app.ingest.loader import load_resources
 from app.ingest.summary import build_patient_summary
 
@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("Removing existing database at %s", args.db)
     args.db.unlink(missing_ok=True)
     logger.info("Initializing fresh database at %s", args.db)
-    conn = connect(args.db)
+    conn = open_connection(args.db)
     init_schema(conn)
 
     try:

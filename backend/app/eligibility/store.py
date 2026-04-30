@@ -11,6 +11,35 @@ from collections.abc import Iterator
 from .types import PatientSummary
 
 
+def _int_flag_to_bool(stored_value: int | None) -> bool | None:
+    if stored_value is None:
+        return None
+    return bool(stored_value)
+
+
+def _row_to_patient_summary(row: sqlite3.Row) -> PatientSummary:
+    return PatientSummary(
+        patient_id=row["patient_id"],
+        given_name=row["given_name"],
+        family_name=row["family_name"],
+        birth_date=row["birth_date"],
+        sex=row["sex"],
+        latest_bmi=row["latest_bmi"],
+        latest_bmi_date=row["latest_bmi_date"],
+        latest_bmi_evidence_id=row["latest_bmi_evidence_id"],
+        has_hypertension=_int_flag_to_bool(row["has_hypertension"]),
+        hypertension_evidence_id=row["hypertension_evidence_id"],
+        has_type2_diabetes=_int_flag_to_bool(row["has_type2_diabetes"]),
+        type2_diabetes_evidence_id=row["type2_diabetes_evidence_id"],
+        has_psych_eval=_int_flag_to_bool(row["has_psych_eval"]),
+        psych_eval_evidence_id=row["psych_eval_evidence_id"],
+        has_weight_loss_evidence=_int_flag_to_bool(
+            row["has_weight_loss_evidence"]
+        ),
+        weight_loss_evidence_id=row["weight_loss_evidence_id"],
+    )
+
+
 def load_summary(
     conn: sqlite3.Connection, patient_id: str
 ) -> PatientSummary | None:
@@ -51,32 +80,3 @@ def load_all_summaries(
     cursor = conn.execute("SELECT * FROM patient_summary ORDER BY patient_id")
     for row in cursor:
         yield _row_to_patient_summary(row)
-
-
-def _row_to_patient_summary(row: sqlite3.Row) -> PatientSummary:
-    return PatientSummary(
-        patient_id=row["patient_id"],
-        given_name=row["given_name"],
-        family_name=row["family_name"],
-        birth_date=row["birth_date"],
-        sex=row["sex"],
-        latest_bmi=row["latest_bmi"],
-        latest_bmi_date=row["latest_bmi_date"],
-        latest_bmi_evidence_id=row["latest_bmi_evidence_id"],
-        has_hypertension=_int_flag_to_bool(row["has_hypertension"]),
-        hypertension_evidence_id=row["hypertension_evidence_id"],
-        has_type2_diabetes=_int_flag_to_bool(row["has_type2_diabetes"]),
-        type2_diabetes_evidence_id=row["type2_diabetes_evidence_id"],
-        has_psych_eval=_int_flag_to_bool(row["has_psych_eval"]),
-        psych_eval_evidence_id=row["psych_eval_evidence_id"],
-        has_weight_loss_evidence=_int_flag_to_bool(
-            row["has_weight_loss_evidence"]
-        ),
-        weight_loss_evidence_id=row["weight_loss_evidence_id"],
-    )
-
-
-def _int_flag_to_bool(stored_value: int | None) -> bool | None:
-    if stored_value is None:
-        return None
-    return bool(stored_value)

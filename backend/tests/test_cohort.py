@@ -1,12 +1,12 @@
 import sqlite3
 from pathlib import Path
 
-from app.db import connect, init_schema
+from app.db import init_schema, open_connection
 from app.eligibility.cohort import build_cohort_report
 
 
 def _empty_db(tmp_path: Path) -> sqlite3.Connection:
-    conn = connect(tmp_path / "cohort.db")
+    conn = open_connection(tmp_path / "cohort.db")
     init_schema(conn)
     return conn
 

@@ -14,7 +14,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from .api import cohort as cohort_router
-from .api import patient_view as patient_view_router
 from .api import patients as patients_router
 
 DB_PATH = Path(os.environ.get("FHIR_DB_PATH", "data/fhir.db"))
@@ -35,15 +34,11 @@ async def lifespan(app: FastAPI):
     if not logging.getLogger().handlers:
         logging.basicConfig(level=logging.INFO, format=_LOG_FORMAT)
     startup_logger = logging.getLogger("app.startup")
-    if not DB_PATH.exists():
-        startup_logger.warning(
-            "DB %s not found - run `make ingest` first", DB_PATH
-        )
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        startup_logger.warning(
-            "ANTHROPIC_API_KEY not set - AI Assist will use deterministic "
-            "fallback"
-        )
+    startup_logger.info(
+        "startup: db_present=%s anthropic_key_present=%s",
+        DB_PATH.exists(),
+        bool(os.environ.get("ANTHROPIC_API_KEY")),
+    )
     app.state.db_path = DB_PATH
     yield
 
@@ -54,7 +49,6 @@ app = FastAPI(
 )
 
 app.include_router(patients_router.router)
-app.include_router(patient_view_router.router)
 app.include_router(cohort_router.router)
 
 

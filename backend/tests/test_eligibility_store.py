@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-from app.db import connect, init_schema
+from app.db import init_schema, open_connection
 from app.eligibility.store import load_all_summaries, load_summary
 from app.eligibility.types import PatientSummary
 from app.ingest.loader import load_resources
@@ -17,7 +17,7 @@ TINY_RESOURCE_TYPES = (
 
 
 def _seeded_connection(tmp_path: Path) -> sqlite3.Connection:
-    conn = connect(tmp_path / "test.db")
+    conn = open_connection(tmp_path / "test.db")
     init_schema(conn)
     load_resources(conn, FIXTURE_DIR, types=TINY_RESOURCE_TYPES)
     build_patient_summary(conn)
@@ -75,7 +75,7 @@ class TestLoadAllSummaries:
         assert all(isinstance(s, PatientSummary) for s in summaries)
 
     def test_returns_empty_iterator_when_table_empty(self, tmp_path: Path):
-        conn = connect(tmp_path / "empty.db")
+        conn = open_connection(tmp_path / "empty.db")
         init_schema(conn)
 
         summaries = list(load_all_summaries(conn))

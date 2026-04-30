@@ -21,42 +21,8 @@ _PSYCH_EVAL_REQUIREMENT = "Psychological evaluation"
 _WEIGHT_LOSS_REQUIREMENT = "Prior weight-loss attempts"
 
 
-def evaluate(summary: PatientSummary) -> EligibilityResult:
-    """Applies the policy rules to one patient summary.
-
-    Each check is computed independently from the underlying facts and
-    paired with the FHIR resource ID(s) that justify it. The combinator
-    folds the four checks into a final `eligible` / `not_eligible` /
-    `unknown` verdict per the spec.
-
-    Args:
-        summary: The derived facts for a single patient.
-
-    Returns:
-        The final `EligibilityResult` with checks in stable order and
-        the reasons for any `unknown` checks pre-aggregated for the
-        cohort report.
-    """
-    bmi_check = _evaluate_bmi_threshold(summary)
-    comorbidity_check = _evaluate_comorbidity(summary)
-    psych_eval_check = _evaluate_psych_eval(summary)
-    weight_loss_check = _evaluate_weight_loss(summary)
-
-    checks = [
-        bmi_check,
-        comorbidity_check,
-        psych_eval_check,
-        weight_loss_check,
-    ]
-    unknown_reasons = [
-        check.reason for check in checks if check.status == "unknown"
-    ]
-    status = _combine(summary, checks)
-    return EligibilityResult(
-        status=status,
-        checks=checks,
-        unknown_reasons=unknown_reasons,
-    )
+def _evidence_list(evidence_id: str | None) -> list[str]:
+    return [evidence_id] if evidence_id else []
 
 
 def _evaluate_bmi_threshold(summary: PatientSummary) -> CheckResult:
@@ -186,5 +152,39 @@ def _combine(summary: PatientSummary, checks: list[CheckResult]) -> str:
     return "unknown"
 
 
-def _evidence_list(evidence_id: str | None) -> list[str]:
-    return [evidence_id] if evidence_id else []
+def evaluate(summary: PatientSummary) -> EligibilityResult:
+    """Applies the policy rules to one patient summary.
+
+    Each check is computed independently from the underlying facts and
+    paired with the FHIR resource ID(s) that justify it. The combinator
+    folds the four checks into a final `eligible` / `not_eligible` /
+    `unknown` verdict per the spec.
+
+    Args:
+        summary: The derived facts for a single patient.
+
+    Returns:
+        The final `EligibilityResult` with checks in stable order and
+        the reasons for any `unknown` checks pre-aggregated for the
+        cohort report.
+    """
+    bmi_check = _evaluate_bmi_threshold(summary)
+    comorbidity_check = _evaluate_comorbidity(summary)
+    psych_eval_check = _evaluate_psych_eval(summary)
+    weight_loss_check = _evaluate_weight_loss(summary)
+
+    checks = [
+        bmi_check,
+        comorbidity_check,
+        psych_eval_check,
+        weight_loss_check,
+    ]
+    unknown_reasons = [
+        check.reason for check in checks if check.status == "unknown"
+    ]
+    status = _combine(summary, checks)
+    return EligibilityResult(
+        status=status,
+        checks=checks,
+        unknown_reasons=unknown_reasons,
+    )

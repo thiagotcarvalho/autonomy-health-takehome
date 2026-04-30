@@ -2,7 +2,7 @@ import json
 import sqlite3
 from pathlib import Path
 
-from app.db import connect, init_schema
+from app.db import init_schema, open_connection
 from app.ingest.loader import load_resources
 from app.ingest.summary import build_patient_summary
 
@@ -16,7 +16,7 @@ TINY_RESOURCE_TYPES = (
 
 
 def _seeded_connection(tmp_path: Path) -> sqlite3.Connection:
-    conn = connect(tmp_path / "test.db")
+    conn = open_connection(tmp_path / "test.db")
     init_schema(conn)
     load_resources(conn, FIXTURE_DIR, types=TINY_RESOURCE_TYPES)
     return conn
@@ -74,6 +74,57 @@ class TestBuildPatientSummary:
         assert p1["has_hypertension"] == 1
         assert p1["hypertension_evidence_id"] == "Condition/c1"
 
+    def test_non_qualifying_snomed_code_does_not_flip_hypertension_flag(
+        self, tmp_path: Path
+    ):
+        conn = open_connection(tmp_path / "test.db")
+        init_schema(conn)
+        conn.execute(
+            "INSERT INTO resources "
+            "(id, type, patient_id, effective_date, json) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                "Patient/p1",
+                "Patient",
+                "p1",
+                None,
+                json.dumps({"resourceType": "Patient", "id": "p1"}),
+            ),
+        )
+        non_qualifying_condition = {
+            "resourceType": "Condition",
+            "id": "c-other",
+            "subject": {"reference": "Patient/p1"},
+            "code": {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "73211009",
+                        "display": "Diabetes mellitus (unspecified)",
+                    }
+                ]
+            },
+        }
+        conn.execute(
+            "INSERT INTO resources "
+            "(id, type, patient_id, effective_date, json) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                "Condition/c-other",
+                "Condition",
+                "p1",
+                None,
+                json.dumps(non_qualifying_condition),
+            ),
+        )
+        conn.commit()
+
+        build_patient_summary(conn)
+
+        p1 = _summary_row(conn, "p1")
+        assert p1["has_hypertension"] is None
+        assert p1["hypertension_evidence_id"] is None
+
     def test_extracts_psych_eval_with_evidence(self, tmp_path: Path):
         conn = _seeded_connection(tmp_path)
 
@@ -108,7 +159,7 @@ class TestBuildPatientSummary:
     def test_bmi_tiebreaker_picks_higher_resource_id_for_same_date(
         self, tmp_path: Path
     ):
-        conn = connect(tmp_path / "test.db")
+        conn = open_connection(tmp_path / "test.db")
         init_schema(conn)
         same_date = "2024-03-01T10:00:00Z"
         conn.execute(
@@ -172,7 +223,7 @@ class TestBuildPatientSummary:
             '"code":{"coding":[{"system":"http://snomed.info/sct",'
             '"code":"59621000","display":"Hypertension"}]}}\n'
         )
-        conn = connect(tmp_path / "test.db")
+        conn = open_connection(tmp_path / "test.db")
         init_schema(conn)
         load_resources(conn, source_dir, types=("Patient", "Condition"))
 

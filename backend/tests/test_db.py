@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from app.db import connect, init_schema
+from app.db import init_schema, open_connection
 
 
 def test_init_schema_creates_tables(tmp_path: Path):
     db_path = tmp_path / "test.db"
-    conn = connect(db_path)
+    conn = open_connection(db_path)
     init_schema(conn)
     rows = conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
@@ -17,7 +17,7 @@ def test_init_schema_creates_tables(tmp_path: Path):
 
 def test_init_schema_creates_indexes(tmp_path: Path):
     db_path = tmp_path / "test.db"
-    conn = connect(db_path)
+    conn = open_connection(db_path)
     init_schema(conn)
     rows = conn.execute(
         "SELECT name FROM sqlite_master "
@@ -29,9 +29,9 @@ def test_init_schema_creates_indexes(tmp_path: Path):
     assert "idx_resources_patient_date" in names
 
 
-def test_connect_uses_row_factory(tmp_path: Path):
+def test_open_connection_uses_row_factory(tmp_path: Path):
     db_path = tmp_path / "test.db"
-    conn = connect(db_path)
+    conn = open_connection(db_path)
     init_schema(conn)
     conn.execute(
         "INSERT INTO resources (id, type, patient_id, effective_date, json) "
@@ -45,7 +45,7 @@ def test_connect_uses_row_factory(tmp_path: Path):
 
 def test_init_schema_is_idempotent(tmp_path: Path):
     db_path = tmp_path / "test.db"
-    conn = connect(db_path)
+    conn = open_connection(db_path)
     init_schema(conn)
     init_schema(conn)  # second call should not raise
     rows = conn.execute(

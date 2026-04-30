@@ -1,14 +1,15 @@
 import sqlite3
 from pathlib import Path
 
-from app.db import connect, init_schema
+import orjson
+from app.db import init_schema, open_connection
 from app.ingest.loader import load_resources
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "tiny"
 
 
 def _open_test_db(db_path: Path) -> sqlite3.Connection:
-    conn = connect(db_path)
+    conn = open_connection(db_path)
     init_schema(conn)
     return conn
 
@@ -84,4 +85,4 @@ class TestLoadResources:
         stored_json = conn.execute(
             "SELECT json FROM resources WHERE id = 'Patient/p1'"
         ).fetchone()["json"]
-        assert '"gender":"male"' in stored_json.replace(" ", "")
+        assert orjson.loads(stored_json)["gender"] == "male"

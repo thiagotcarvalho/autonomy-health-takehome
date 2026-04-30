@@ -4,7 +4,7 @@ import json
 from importlib import reload
 from pathlib import Path
 
-from app.db import connect, init_schema
+from app.db import init_schema, open_connection
 from fastapi.testclient import TestClient
 
 
@@ -69,7 +69,7 @@ def _seed_conditions_with_varied_statuses(database_path: Path) -> None:
     Condition with no `clinicalStatus` at all (treated as unknown, not
     active, per the codebase's missing-data policy).
     """
-    conn = connect(database_path)
+    conn = open_connection(database_path)
     init_schema(conn)
     conn.execute(
         "INSERT INTO patient_summary (patient_id, given_name, family_name) "

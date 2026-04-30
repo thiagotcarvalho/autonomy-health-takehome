@@ -13,6 +13,12 @@ from .evaluate import evaluate
 from .store import load_all_summaries
 
 
+def _percentage(count: int, total: int) -> float:
+    if total == 0:
+        return 0.0
+    return round(count / total * 100, 1)
+
+
 def build_cohort_report(
     conn: sqlite3.Connection, top_n_reasons: int = 5
 ) -> dict:
@@ -64,9 +70,3 @@ def build_cohort_report(
         "percentages": percentages,
         "top_unknown_reasons": top_unknown_reasons,
     }
-
-
-def _percentage(count: int, total: int) -> float:
-    if total == 0:
-        return 0.0
-    return round(count / total * 100, 1)
