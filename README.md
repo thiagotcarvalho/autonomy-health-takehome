@@ -9,7 +9,8 @@ data with deterministic eligibility logic and AI-assisted review.
 autonomy-health-takehome/
 ├── backend/
 │   ├── app/
-│   │   ├── api/              # FastAPI routers (patients, patient_view, cohort)
+│   │   ├── api/              # FastAPI routers (patients, cohort)
+│   │   ├── ai_assist/        # Anthropic SDK wrapper, prompt, reconciliation
 │   │   ├── eligibility/      # Pure-function policy evaluator + cohort report
 │   │   │   ├── evaluate.py   # Bariatric eligibility rules
 │   │   │   ├── cohort.py     # Cohort-level aggregation
@@ -28,7 +29,7 @@ autonomy-health-takehome/
 │   │   └── ingest_perf.md    # Profile-driven optimization writeup
 │   ├── scripts/
 │   │   └── ingest_cli.py     # Ingestion entry point
-│   └── tests/                # pytest suite (64 tests)
+│   └── tests/                # pytest suite
 ├── frontend/
 │   ├── src/
 │   │   ├── components/ui/    # shadcn/ui primitives (button, card, …)
@@ -47,7 +48,7 @@ autonomy-health-takehome/
 └── pyproject.toml
 ```
 
-The system has four layers:
+The system has five layers:
 
 1. **Ingest** reads bulk FHIR NDJSON shards into a hybrid SQLite store: a
    `resources` blob table preserves full JSON, and a derived `patient_summary`
@@ -56,9 +57,14 @@ The system has four layers:
    bariatric prior-authorization rules and returns a verdict plus per-check
    reasons and FHIR resource IDs as evidence. The same code path serves the
    per-patient API and the cohort report.
-3. **API** (FastAPI) exposes `/api/patients`, `/api/patients/{id}`, and
-   `/api/cohort/report`.
-4. **Frontend** (React + Vite + Tailwind 4 + shadcn/ui) is a single-page app
+3. **API** (FastAPI) exposes `/api/patients`, `/api/patients/{id}`,
+   `/api/cohort/report`, and `/api/patients/{id}/ai-assist`.
+4. **AI Assist** wraps Anthropic Claude with a structured-output tool to
+   produce a grounded review for one patient. The result is reconciled
+   against the deterministic verdict: deterministic always wins, the AI's
+   read is shown alongside, and disagreements (overall verdict, per-check
+   status, hallucinated evidence) are surfaced to the reviewer.
+5. **Frontend** (React + Vite + Tailwind 4 + shadcn/ui) is a single-page app
    that talks to the API through a Vite dev proxy.
 
 ## Prerequisites
@@ -80,8 +86,7 @@ uv sync
 
 The dataset is gitignored and not shipped with the repo. Grab one from
 [smart-on-fhir/sample-bulk-fhir-datasets](https://github.com/smart-on-fhir/sample-bulk-fhir-datasets)
-and unpack it into `data/dataset/`. Any branch of that repo works (the
-1000-patient and 100-patient variants are both common). Example:
+and unpack it into `data/dataset/`. Any branch of that repo works. Example:
 
 ```bash
 curl -L https://github.com/smart-on-fhir/sample-bulk-fhir-datasets/archive/refs/heads/1000-patients.zip -o /tmp/dataset.zip
@@ -127,9 +132,36 @@ curl http://localhost:8000/api/patients/<patient_id>
 
 # Cohort-level eligibility report
 curl http://localhost:8000/api/cohort/report
+
+# AI Assist (POST; requires ANTHROPIC_API_KEY; see "AI Assist" below)
+curl -X POST http://localhost:8000/api/patients/<patient_id>/ai-assist
 ```
 
 Interactive docs are available at `http://localhost:8000/docs`.
+
+### AI Assist
+
+The `POST /api/patients/{id}/ai-assist` endpoint wraps Anthropic Claude
+to produce a structured, grounded review for one patient. It requires
+an `ANTHROPIC_API_KEY` to be available in the environment. Drop one
+into a `.env` file at the repo root:
+
+```bash
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
+```
+
+`make backend` picks it up automatically (the Makefile passes
+`--env-file .env` to `uv run` when the file exists). Without a key, the
+endpoint returns 503 with a clear message; the rest of the API still
+works.
+
+The response carries three sections: `ai` (the model's verdict +
+reasoning + per-check breakdown), `deterministic` (the same shape the
+existing `/api/patients/{id}` endpoint returns), and `reconciliation`
+(which surfaces overall verdict mismatch, per-check status mismatches,
+and any cited resource IDs that were not in the patient's data).
+Deterministic always wins; the AI may explain or contextualize but
+never override.
 
 ### Inspecting the SQLite database
 
@@ -172,7 +204,7 @@ SELECT json FROM resources WHERE id = '<resource_id>';
 ### Tests, lint, and format
 
 ```bash
-make test     # 64 tests, runs in under half a second
+make test     # pytest, runs in under half a second
 make lint     # ruff check
 make format   # ruff format
 ```
