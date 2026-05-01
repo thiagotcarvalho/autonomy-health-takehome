@@ -148,9 +148,9 @@ function App() {
               variant="ghost"
               size="sm"
               onClick={() => setSelectedId(null)}
-              aria-disabled={!selectedId}
+              disabled={!selectedId}
               aria-label="Return to cohort report"
-              className={!selectedId ? 'opacity-50' : undefined}
+              className="disabled:pointer-events-auto"
             >
               <FileText className="mr-1 h-4 w-4" />
               Cohort Report
