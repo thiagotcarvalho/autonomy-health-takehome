@@ -215,9 +215,11 @@ export function AIAssistDialog({patientId}: AIAssistDialogProps) {
             against the deterministic verdict.
           </DialogDescription>
         </DialogHeader>
-        {state?.status === 'loading' && <LoadingPanel />}
-        {state?.status === 'error' && <ErrorPanel message={state.message} />}
-        {state?.status === 'ready' && <ResultPanel result={state.data} />}
+        <div role="status" aria-live="polite" aria-busy={state?.status === 'loading'}>
+          {state?.status === 'loading' && <LoadingPanel />}
+          {state?.status === 'error' && <ErrorPanel message={state.message} />}
+          {state?.status === 'ready' && <ResultPanel result={state.data} />}
+        </div>
       </DialogContent>
     </Dialog>
   );

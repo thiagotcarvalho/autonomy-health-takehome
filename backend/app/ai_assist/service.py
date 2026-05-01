@@ -32,21 +32,13 @@ def _build_eligibility_facts(summary: PatientSummary) -> dict[str, Any]:
     return {
         "latest_bmi": summary.latest_bmi,
         "latest_bmi_evidence_id": summary.latest_bmi_evidence_id,
-        "has_hypertension": bool(summary.has_hypertension)
-        if summary.has_hypertension is not None
-        else None,
+        "has_hypertension": summary.has_hypertension,
         "hypertension_evidence_id": summary.hypertension_evidence_id,
-        "has_type2_diabetes": bool(summary.has_type2_diabetes)
-        if summary.has_type2_diabetes is not None
-        else None,
+        "has_type2_diabetes": summary.has_type2_diabetes,
         "type2_diabetes_evidence_id": summary.type2_diabetes_evidence_id,
-        "has_psych_eval": bool(summary.has_psych_eval)
-        if summary.has_psych_eval is not None
-        else None,
+        "has_psych_eval": summary.has_psych_eval,
         "psych_eval_evidence_id": summary.psych_eval_evidence_id,
-        "has_weight_loss_evidence": bool(summary.has_weight_loss_evidence)
-        if summary.has_weight_loss_evidence is not None
-        else None,
+        "has_weight_loss_evidence": summary.has_weight_loss_evidence,
         "weight_loss_evidence_id": summary.weight_loss_evidence_id,
     }
 

@@ -34,8 +34,8 @@ class AIAssessment:
 @dataclass(frozen=True)
 class CheckDisagreement:
     requirement: str
-    deterministic_status: str
-    ai_status: str
+    deterministic_status: AICheckStatus
+    ai_status: AICheckStatus
 
 
 @dataclass(frozen=True)
