@@ -50,19 +50,18 @@ export function ClinicalSnapshotCard({snapshot}: ClinicalSnapshotProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <FactRow label="Patient" evidenceId={snapshot.patient_id}>
+          <FactRow label="Patient">
             <PatientName
               givenName={snapshot.given_name}
               familyName={snapshot.family_name}
             />
           </FactRow>
+          <FactRow label="ID">{snapshot.patient_id}</FactRow>
           <FactRow label="Age">
             {snapshot.age ?? (
               <MissingValue reason="No birth date recorded; age cannot be computed." />
             )}
           </FactRow>
-          {/* No evidence ID on this row: gender comes from the Patient
-              resource itself, already cited on the Patient row above. */}
           <FactRow label="Sex">
             {snapshot.sex ?? (
               <MissingValue reason="No gender recorded on the Patient resource." />

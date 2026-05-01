@@ -73,15 +73,17 @@ export function PatientSelector({
                     onSelect(patient.id);
                     setOpen(false);
                   }}
-                  className="flex items-center justify-between gap-2"
+                  className="flex items-start gap-2"
                 >
-                  <span className="truncate">{patient.display_name}</span>
-                  <span className="text-muted-foreground font-mono text-[11px] shrink-0">
-                    {patient.id.slice(0, 8)}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate">{patient.display_name}</p>
+                    <p className="text-muted-foreground font-mono text-[10px] truncate">
+                      {patient.id}
+                    </p>
+                  </div>
                   <Check
                     className={cn(
-                      'h-4 w-4 shrink-0',
+                      'h-4 w-4 shrink-0 mt-0.5',
                       patient.id === selectedId
                         ? 'opacity-100'
                         : 'opacity-0',
