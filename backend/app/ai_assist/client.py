@@ -75,7 +75,7 @@ def call_with_tool(
             tools=[tool_definition],
             tool_choice={"type": "tool", "name": tool_definition["name"]},
         )
-    except anthropic.APIError as exc:
+    except anthropic.AnthropicError as exc:
         logger.exception("Anthropic API call failed")
         raise AIAssistCallFailed(str(exc)) from exc
 

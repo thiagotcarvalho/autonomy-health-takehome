@@ -1,12 +1,14 @@
 """JSON Schema for the structured-output tool the model uses.
 
 Forcing the model to invoke a tool with a strict input schema turns
-"please return JSON" into a structural guarantee — malformed output
+"please return JSON" into a structural guarantee. Malformed output
 becomes impossible at the API layer, so failure modes simplify to
 network errors and refusal-to-use-the-tool.
 """
 
 from typing import Any
+
+from ..eligibility.evaluate import REQUIREMENT_NAMES
 
 ASSESSMENT_TOOL_NAME = "report_eligibility_assessment"
 
@@ -25,7 +27,7 @@ ASSESSMENT_TOOL: dict[str, Any] = {
                 "enum": ["eligible", "not_eligible", "unknown"],
                 "description": (
                     "Overall eligibility verdict. Use 'unknown' when any "
-                    "required item is missing — never guess."
+                    "required item is missing. Never guess."
                 ),
             },
             "reasoning": {
@@ -37,17 +39,19 @@ ASSESSMENT_TOOL: dict[str, Any] = {
             "checks": {
                 "type": "array",
                 "description": (
-                    "Per-criterion breakdown matching the four policy "
-                    "checks: BMI threshold, comorbidity, psychological "
-                    "evaluation, prior weight-loss attempts."
+                    "Per-criterion breakdown. Include exactly one "
+                    "entry per requirement listed in the `requirement` "
+                    "enum below."
                 ),
                 "items": {
                     "type": "object",
                     "properties": {
                         "requirement": {
                             "type": "string",
+                            "enum": list(REQUIREMENT_NAMES),
                             "description": (
-                                "The criterion name (e.g., 'BMI threshold')."
+                                "Criterion name. Must be one of the four "
+                                "canonical strings."
                             ),
                         },
                         "status": {

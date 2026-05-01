@@ -1,7 +1,7 @@
 """Orchestrator: build patient context, call the model, reconcile, return.
 
 The single entry point the API endpoint calls. Keeps every other
-module in this package free of cross-concern coupling — `client.py`
+module in this package free of cross-concern coupling. `client.py`
 talks only to Anthropic, `reconcile.py` is a pure function, and the
 schema/prompt modules are just data.
 """
@@ -15,7 +15,7 @@ from ..eligibility.evaluate import evaluate
 from ..eligibility.store import load_summary
 from ..eligibility.types import PatientSummary
 from ..util import compute_age
-from .client import call_with_tool
+from .client import AIAssistCallFailed, call_with_tool
 from .prompt import SYSTEM_PROMPT, build_user_message
 from .reconcile import reconcile
 from .tool_schema import ASSESSMENT_TOOL
@@ -147,20 +147,32 @@ def _build_patient_context(
 
 
 def _parse_ai_assessment(tool_input: dict[str, Any]) -> AIAssessment:
-    """Maps the model's tool-input dict to the `AIAssessment` dataclass."""
-    return AIAssessment(
-        status=tool_input["status"],
-        reasoning=tool_input["reasoning"],
-        checks=[
-            AICheck(
-                requirement=check["requirement"],
-                status=check["status"],
-                reason=check["reason"],
-                evidence=list(check["evidence"]),
-            )
-            for check in tool_input["checks"]
-        ],
-    )
+    """Maps the model's tool-input dict to the `AIAssessment` dataclass.
+
+    Raises:
+        AIAssistCallFailed: When the dict is missing required keys or
+          carries unexpected types. The tool schema enforces shape at
+          the API boundary, but partial responses can still arrive
+          under load or future spec drift.
+    """
+    try:
+        return AIAssessment(
+            status=tool_input["status"],
+            reasoning=tool_input["reasoning"],
+            checks=[
+                AICheck(
+                    requirement=check["requirement"],
+                    status=check["status"],
+                    reason=check["reason"],
+                    evidence=list(check["evidence"]),
+                )
+                for check in tool_input["checks"]
+            ],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise AIAssistCallFailed(
+            f"Model tool input was malformed: {exc}"
+        ) from exc
 
 
 def assist(conn: sqlite3.Connection, patient_id: str) -> AIAssistResult:

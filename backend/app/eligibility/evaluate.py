@@ -2,7 +2,7 @@
 
 Takes a `PatientSummary` (the derived facts plus their FHIR evidence
 IDs) and returns a deterministic `EligibilityResult`. The same code
-path serves the per-patient API and the cohort report — the function
+path serves the per-patient API and the cohort report. The function
 performs no I/O so it stays trivially testable.
 """
 
@@ -15,10 +15,17 @@ from .types import (
 _BMI_QUALIFYING_THRESHOLD = 35.0
 _BMI_COMORBIDITY_BYPASS_THRESHOLD = 40.0
 
-_BMI_REQUIREMENT = "BMI threshold"
-_COMORBIDITY_REQUIREMENT = "Comorbidity present"
-_PSYCH_EVAL_REQUIREMENT = "Psychological evaluation"
-_WEIGHT_LOSS_REQUIREMENT = "Prior weight-loss attempts"
+BMI_REQUIREMENT = "BMI threshold"
+COMORBIDITY_REQUIREMENT = "Comorbidity present"
+PSYCH_EVAL_REQUIREMENT = "Psychological evaluation"
+WEIGHT_LOSS_REQUIREMENT = "Prior weight-loss attempts"
+
+REQUIREMENT_NAMES = (
+    BMI_REQUIREMENT,
+    COMORBIDITY_REQUIREMENT,
+    PSYCH_EVAL_REQUIREMENT,
+    WEIGHT_LOSS_REQUIREMENT,
+)
 
 
 def _evidence_list(evidence_id: str | None) -> list[str]:
@@ -28,7 +35,7 @@ def _evidence_list(evidence_id: str | None) -> list[str]:
 def _evaluate_bmi_threshold(summary: PatientSummary) -> CheckResult:
     if summary.latest_bmi is None:
         return CheckResult(
-            requirement=_BMI_REQUIREMENT,
+            requirement=BMI_REQUIREMENT,
             status="unknown",
             reason="No BMI observation recorded for this patient.",
             evidence=[],
@@ -36,7 +43,7 @@ def _evaluate_bmi_threshold(summary: PatientSummary) -> CheckResult:
     evidence = _evidence_list(summary.latest_bmi_evidence_id)
     if summary.latest_bmi >= _BMI_QUALIFYING_THRESHOLD:
         return CheckResult(
-            requirement=_BMI_REQUIREMENT,
+            requirement=BMI_REQUIREMENT,
             status="met",
             reason=(
                 f"Latest BMI of {summary.latest_bmi:.1f} is at or above "
@@ -45,7 +52,7 @@ def _evaluate_bmi_threshold(summary: PatientSummary) -> CheckResult:
             evidence=evidence,
         )
     return CheckResult(
-        requirement=_BMI_REQUIREMENT,
+        requirement=BMI_REQUIREMENT,
         status="not_met",
         reason=(
             f"Latest BMI of {summary.latest_bmi:.1f} is below the "
@@ -63,7 +70,7 @@ def _evaluate_comorbidity(summary: PatientSummary) -> CheckResult:
         evidence.append(summary.type2_diabetes_evidence_id)
     if evidence:
         return CheckResult(
-            requirement=_COMORBIDITY_REQUIREMENT,
+            requirement=COMORBIDITY_REQUIREMENT,
             status="met",
             reason=(
                 "Qualifying comorbidity (hypertension or type 2 diabetes) "
@@ -72,7 +79,7 @@ def _evaluate_comorbidity(summary: PatientSummary) -> CheckResult:
             evidence=evidence,
         )
     return CheckResult(
-        requirement=_COMORBIDITY_REQUIREMENT,
+        requirement=COMORBIDITY_REQUIREMENT,
         status="unknown",
         reason=(
             "No qualifying comorbidity (hypertension or type 2 diabetes) "
@@ -86,13 +93,13 @@ def _evaluate_psych_eval(summary: PatientSummary) -> CheckResult:
     evidence = _evidence_list(summary.psych_eval_evidence_id)
     if summary.has_psych_eval and summary.psych_eval_evidence_id:
         return CheckResult(
-            requirement=_PSYCH_EVAL_REQUIREMENT,
+            requirement=PSYCH_EVAL_REQUIREMENT,
             status="met",
             reason="Psychological evaluation documented for this patient.",
             evidence=evidence,
         )
     return CheckResult(
-        requirement=_PSYCH_EVAL_REQUIREMENT,
+        requirement=PSYCH_EVAL_REQUIREMENT,
         status="unknown",
         reason=(
             "No psychological evaluation documentation found for this patient."
@@ -105,7 +112,7 @@ def _evaluate_weight_loss(summary: PatientSummary) -> CheckResult:
     evidence = _evidence_list(summary.weight_loss_evidence_id)
     if summary.has_weight_loss_evidence and summary.weight_loss_evidence_id:
         return CheckResult(
-            requirement=_WEIGHT_LOSS_REQUIREMENT,
+            requirement=WEIGHT_LOSS_REQUIREMENT,
             status="met",
             reason=(
                 "Prior weight-loss attempt documentation found for this "
@@ -114,7 +121,7 @@ def _evaluate_weight_loss(summary: PatientSummary) -> CheckResult:
             evidence=evidence,
         )
     return CheckResult(
-        requirement=_WEIGHT_LOSS_REQUIREMENT,
+        requirement=WEIGHT_LOSS_REQUIREMENT,
         status="unknown",
         reason=(
             "No prior weight-loss attempt documentation found for this patient."
@@ -125,10 +132,10 @@ def _evaluate_weight_loss(summary: PatientSummary) -> CheckResult:
 
 def _combine(summary: PatientSummary, checks: list[CheckResult]) -> str:
     checks_by_requirement = {check.requirement: check for check in checks}
-    bmi_status = checks_by_requirement[_BMI_REQUIREMENT].status
-    comorbidity_status = checks_by_requirement[_COMORBIDITY_REQUIREMENT].status
-    psych_eval_status = checks_by_requirement[_PSYCH_EVAL_REQUIREMENT].status
-    weight_loss_status = checks_by_requirement[_WEIGHT_LOSS_REQUIREMENT].status
+    bmi_status = checks_by_requirement[BMI_REQUIREMENT].status
+    comorbidity_status = checks_by_requirement[COMORBIDITY_REQUIREMENT].status
+    psych_eval_status = checks_by_requirement[PSYCH_EVAL_REQUIREMENT].status
+    weight_loss_status = checks_by_requirement[WEIGHT_LOSS_REQUIREMENT].status
 
     if bmi_status == "not_met":
         return "not_eligible"
