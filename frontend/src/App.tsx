@@ -1,12 +1,12 @@
-import {ArrowLeft} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import { FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import {ClinicalSnapshotCard} from '@/components/clinical-snapshot';
-import {CohortReportCard} from '@/components/cohort-report';
-import {EligibilityCard} from '@/components/eligibility-card';
-import {PatientSelector} from '@/components/patient-selector';
-import {TimelineCard} from '@/components/timeline';
-import {Button} from '@/components/ui/button';
+import { ClinicalSnapshotCard } from '@/components/clinical-snapshot';
+import { CohortReportCard } from '@/components/cohort-report';
+import { EligibilityCard } from '@/components/eligibility-card';
+import { PatientSelector } from '@/components/patient-selector';
+import { TimelineCard } from '@/components/timeline';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -38,7 +38,7 @@ function CohortLoadingView() {
   );
 }
 
-function CohortErrorView({message}: {message: string}) {
+function CohortErrorView({ message }: { message: string }) {
   return (
     <Card>
       <CardHeader>
@@ -61,7 +61,7 @@ function PatientLoadingView() {
   );
 }
 
-function PatientErrorView({message}: {message: string}) {
+function PatientErrorView({ message }: { message: string }) {
   return (
     <Card>
       <CardHeader>
@@ -74,7 +74,7 @@ function PatientErrorView({message}: {message: string}) {
   );
 }
 
-function PatientReview({view}: {view: PatientView}) {
+function PatientReview({ view }: { view: PatientView }) {
   return (
     <div className="space-y-6">
       <ClinicalSnapshotCard snapshot={view.snapshot} />
@@ -101,10 +101,10 @@ function App() {
   useEffect(() => {
     const abortController = new AbortController();
     listPatients(abortController.signal)
-      .then((data) => setPatients({status: 'ready', data}))
+      .then((data) => setPatients({ status: 'ready', data }))
       .catch((error: unknown) => {
         if (isAbortError(error)) return;
-        setPatients({status: 'error', message: formatErrorMessage(error)});
+        setPatients({ status: 'error', message: formatErrorMessage(error) });
       });
     return () => abortController.abort();
   }, []);
@@ -112,10 +112,10 @@ function App() {
   useEffect(() => {
     const abortController = new AbortController();
     getCohortReport(abortController.signal)
-      .then((data) => setCohort({status: 'ready', data}))
+      .then((data) => setCohort({ status: 'ready', data }))
       .catch((error: unknown) => {
         if (isAbortError(error)) return;
-        setCohort({status: 'error', message: formatErrorMessage(error)});
+        setCohort({ status: 'error', message: formatErrorMessage(error) });
       });
     return () => abortController.abort();
   }, []);
@@ -125,13 +125,13 @@ function App() {
       setPatientView(null);
       return;
     }
-    setPatientView({status: 'loading'});
+    setPatientView({ status: 'loading' });
     const abortController = new AbortController();
     getPatient(selectedId, abortController.signal)
-      .then((data) => setPatientView({status: 'ready', data}))
+      .then((data) => setPatientView({ status: 'ready', data }))
       .catch((error: unknown) => {
         if (isAbortError(error)) return;
-        setPatientView({status: 'error', message: formatErrorMessage(error)});
+        setPatientView({ status: 'error', message: formatErrorMessage(error) });
       });
     return () => abortController.abort();
   }, [selectedId]);
@@ -144,16 +144,17 @@ function App() {
             FHIR Prior Authorization Review
           </h1>
           <div className="ml-auto flex items-center gap-3">
-            {selectedId && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedId(null)}
-              >
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                Cohort report
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedId(null)}
+              aria-disabled={!selectedId}
+              aria-label="Return to cohort report"
+              className={!selectedId ? 'opacity-50' : undefined}
+            >
+              <FileText className="mr-1 h-4 w-4" />
+              Cohort Report
+            </Button>
             {patients.status === 'loading' && (
               <span className="text-muted-foreground text-sm">
                 Loading patients...
