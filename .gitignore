@@ -219,8 +219,9 @@ __marimo__/
 data/*.db
 data/*.db-*
 
-# FHIR sample dataset (downloaded externally — see README for source)
-data/sample-bulk-fhir-datasets-1000-patients/
+# FHIR sample dataset (downloaded externally; see README for source)
+data/dataset/*
+!data/dataset/.gitkeep
 
 # Profiling artifacts
 *.prof

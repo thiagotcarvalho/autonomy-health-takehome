@@ -3,8 +3,6 @@
 FHIR prior authorization review tool. A clinician-facing UI over bulk FHIR
 data with deterministic eligibility logic and AI-assisted review.
 
-Source spec: `docs/autonomy-health-assessment.md`.
-
 ## Project Structure
 
 ```
@@ -43,9 +41,8 @@ autonomy-health-takehome/
 │   ├── components.json       # shadcn config
 │   └── package.json
 ├── data/
-│   ├── fhir.db                                    # Built by `make ingest`
-│   └── sample-bulk-fhir-datasets-1000-patients/   # Source NDJSON shards
-├── docs/                     # Assessment brief
+│   ├── fhir.db                # Built by `make ingest` (gitignored)
+│   └── dataset/               # Drop a single FHIR dataset here (gitignored)
 ├── Makefile
 └── pyproject.toml
 ```
@@ -79,17 +76,35 @@ The system has four layers:
 uv sync
 ```
 
-### Build the SQLite database
+### Download a FHIR dataset
 
-The repository ships with the source FHIR NDJSON shards under
-`data/sample-bulk-fhir-datasets-1000-patients/`. Ingest them:
+The dataset is gitignored and not shipped with the repo. Grab one from
+[smart-on-fhir/sample-bulk-fhir-datasets](https://github.com/smart-on-fhir/sample-bulk-fhir-datasets)
+and unpack it into `data/dataset/`. Any branch of that repo works (the
+1000-patient and 100-patient variants are both common). Example:
+
+```bash
+curl -L https://github.com/smart-on-fhir/sample-bulk-fhir-datasets/archive/refs/heads/1000-patients.zip -o /tmp/dataset.zip
+unzip /tmp/dataset.zip -d data/dataset/
+```
+
+After unpacking, `data/dataset/` should contain exactly one directory holding
+the NDJSON shards (`Patient.000.ndjson`, `Condition.000.ndjson`, etc.).
+
+### Build the SQLite database
 
 ```bash
 make ingest
 ```
 
-This produces `data/fhir.db` (~1.2 GB) containing 869,755 resources across
-1,132 patients. The script wipes and rebuilds the DB on every run.
+Auto-discovers the single subdirectory in `data/dataset/`. If the parent is
+empty or contains more than one directory, ingest fails with a clear error.
+To override the auto-discovery and pass an explicit path:
+`uv run python -m scripts.ingest_cli /path/to/dataset`.
+
+For the 1000-patient sample, this produces `data/fhir.db` (~1.2 GB, 869,755
+resources across 1,132 patients) in about 30 seconds. The script wipes and
+rebuilds the DB on every run.
 
 ### Start the API server
 

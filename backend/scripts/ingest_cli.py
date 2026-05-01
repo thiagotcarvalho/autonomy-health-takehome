@@ -3,10 +3,10 @@
 Wipes the target SQLite database and rebuilds it from a directory of
 FHIR bulk NDJSON shards. The pipeline runs in two phases:
 
-    1. Load — stream the in-scope resource types (`Patient`,
+    1. Load: stream the in-scope resource types (`Patient`,
        `Condition`, `Observation`, `Procedure`) from disk into the
        `resources` blob table. See `app.ingest.loader`.
-    2. Summarize — derive one `patient_summary` row per patient with
+    2. Summarize: derive one `patient_summary` row per patient with
        the facts the eligibility evaluator needs (latest BMI, comorbid
        flags, psych-eval evidence, etc.). See `app.ingest.summary`.
 
@@ -14,22 +14,28 @@ The database is wiped on every run so the script is idempotent: the
 output is a function of the input shards, not of any prior state.
 
 Usage:
-    python -m scripts.ingest_cli <data_dir> [--db data/fhir.db]
+    python -m scripts.ingest_cli [data_dir] [--db data/fhir.db]
 
 Arguments:
-    data_dir: Directory containing the FHIR NDJSON shards (one file per
-      resource type, e.g. `Patient.000.ndjson`).
+    data_dir: Optional. Directory containing the FHIR NDJSON shards
+      (one file per resource type, e.g. `Patient.000.ndjson`). When
+      omitted, the script auto-discovers a single subdirectory inside
+      `data/dataset/`. The convention works with any FHIR dataset from
+      https://github.com/smart-on-fhir/sample-bulk-fhir-datasets.
+      Errors if the parent is missing or contains anything other than
+      exactly one directory.
     --db: Output SQLite database path. Defaults to `data/fhir.db`. The
       flag exists primarily so tests can redirect ingest into a
       `tmp_path` fixture without clobbering the production DB.
 
 Exit codes:
-    0 — success.
-    1 — argument errors (e.g. `data_dir` is not a directory).
-    2 — recoverable ingest failures: filesystem (`OSError`), SQLite
-        (`sqlite3.Error`), or malformed NDJSON (`orjson.JSONDecodeError`).
-        Programming bugs (e.g. `AttributeError`) are intentionally not
-        caught and propagate with a full traceback.
+    0: success.
+    1: argument errors (e.g. `data_dir` is not a directory, or the
+       auto-discovery convention isn't met).
+    2: recoverable ingest failures: filesystem (`OSError`), SQLite
+       (`sqlite3.Error`), or malformed NDJSON (`orjson.JSONDecodeError`).
+       Programming bugs (e.g. `AttributeError`) are intentionally not
+       caught and propagate with a full traceback.
 """
 
 import argparse
@@ -45,6 +51,7 @@ from app.ingest.loader import load_resources
 from app.ingest.summary import build_patient_summary
 
 RESOURCE_TYPES = ("Patient", "Condition", "Observation", "Procedure")
+DEFAULT_DATASET_PARENT = Path("data/dataset")
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -54,7 +61,13 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument(
         "data_dir",
         type=Path,
-        help="Directory containing FHIR bulk *.ndjson shards.",
+        nargs="?",
+        default=None,
+        help=(
+            "Directory containing FHIR bulk *.ndjson shards. When "
+            "omitted, auto-discovers a single subdirectory inside "
+            "data/dataset/."
+        ),
     )
     parser.add_argument(
         "--db",
@@ -63,6 +76,36 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="SQLite database path (default: data/fhir.db).",
     )
     return parser.parse_args(argv)
+
+
+def _discover_dataset_dir(parent: Path) -> Path:
+    """Returns the single dataset directory inside `parent`.
+
+    Raises:
+        FileNotFoundError: When `parent` does not exist.
+        ValueError: When `parent` contains zero or more than one
+          subdirectory. The message names every directory found so the
+          caller can decide which to keep.
+    """
+    if not parent.is_dir():
+        raise FileNotFoundError(
+            f"Dataset parent directory {parent} does not exist. "
+            f"Place a single FHIR dataset directory inside it."
+        )
+    candidates = sorted(entry for entry in parent.iterdir() if entry.is_dir())
+    if not candidates:
+        raise ValueError(
+            f"No dataset directory found in {parent}. Place a single "
+            f"FHIR dataset directory there."
+        )
+    if len(candidates) > 1:
+        names = ", ".join(candidate.name for candidate in candidates)
+        raise ValueError(
+            f"Multiple dataset directories found in {parent} ({names}). "
+            f"Only one FHIR dataset can be loaded at a time. Keep one "
+            f"and remove (or move) the others."
+        )
+    return candidates[0]
 
 
 def _print_report(
@@ -107,7 +150,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     logger = logging.getLogger("ingest")
 
-    if not args.data_dir.is_dir():
+    if args.data_dir is None:
+        try:
+            args.data_dir = _discover_dataset_dir(DEFAULT_DATASET_PARENT)
+        except (FileNotFoundError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        logger.info("Auto-discovered dataset at %s", args.data_dir)
+    elif not args.data_dir.is_dir():
         print(
             f"error: {args.data_dir} is not a directory",
             file=sys.stderr,
