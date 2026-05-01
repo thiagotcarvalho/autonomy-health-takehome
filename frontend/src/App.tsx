@@ -1,12 +1,12 @@
-import { FileText } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {FileText} from 'lucide-react';
+import {useEffect, useState} from 'react';
 
-import { ClinicalSnapshotCard } from '@/components/clinical-snapshot';
-import { CohortReportCard } from '@/components/cohort-report';
-import { EligibilityCard } from '@/components/eligibility-card';
-import { PatientSelector } from '@/components/patient-selector';
-import { TimelineCard } from '@/components/timeline';
-import { Button } from '@/components/ui/button';
+import {ClinicalSnapshotCard} from '@/components/clinical-snapshot';
+import {CohortReportCard} from '@/components/cohort-report';
+import {EligibilityCard} from '@/components/eligibility-card';
+import {PatientSelector} from '@/components/patient-selector';
+import {TimelineCard} from '@/components/timeline';
+import {Button} from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -38,7 +38,7 @@ function CohortLoadingView() {
   );
 }
 
-function CohortErrorView({ message }: { message: string }) {
+function CohortErrorView({message}: {message: string}) {
   return (
     <Card>
       <CardHeader>
@@ -61,7 +61,7 @@ function PatientLoadingView() {
   );
 }
 
-function PatientErrorView({ message }: { message: string }) {
+function PatientErrorView({message}: {message: string}) {
   return (
     <Card>
       <CardHeader>
@@ -74,7 +74,7 @@ function PatientErrorView({ message }: { message: string }) {
   );
 }
 
-function PatientReview({ view }: { view: PatientView }) {
+function PatientReview({view}: {view: PatientView}) {
   return (
     <div className="space-y-6">
       <ClinicalSnapshotCard snapshot={view.snapshot} />
@@ -90,10 +90,10 @@ function PatientReview({ view }: { view: PatientView }) {
 function App() {
   const [patients, setPatients] = useState<LoadState<PatientListItem[]>>({
     status: 'loading',
-  });
+ });
   const [cohort, setCohort] = useState<LoadState<CohortReport>>({
     status: 'loading',
-  });
+ });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [patientView, setPatientView] =
     useState<LoadState<PatientView> | null>(null);
@@ -101,40 +101,40 @@ function App() {
   useEffect(() => {
     const abortController = new AbortController();
     listPatients(abortController.signal)
-      .then((data) => setPatients({ status: 'ready', data }))
+      .then((data) => setPatients({status: 'ready', data}))
       .catch((error: unknown) => {
         if (isAbortError(error)) return;
-        setPatients({ status: 'error', message: formatErrorMessage(error) });
-      });
+        setPatients({status: 'error', message: formatErrorMessage(error)});
+     });
     return () => abortController.abort();
-  }, []);
+ }, []);
 
   useEffect(() => {
     const abortController = new AbortController();
     getCohortReport(abortController.signal)
-      .then((data) => setCohort({ status: 'ready', data }))
+      .then((data) => setCohort({status: 'ready', data}))
       .catch((error: unknown) => {
         if (isAbortError(error)) return;
-        setCohort({ status: 'error', message: formatErrorMessage(error) });
-      });
+        setCohort({status: 'error', message: formatErrorMessage(error)});
+     });
     return () => abortController.abort();
-  }, []);
+ }, []);
 
   useEffect(() => {
     if (!selectedId) {
       setPatientView(null);
       return;
-    }
-    setPatientView({ status: 'loading' });
+   }
+    setPatientView({status: 'loading'});
     const abortController = new AbortController();
     getPatient(selectedId, abortController.signal)
-      .then((data) => setPatientView({ status: 'ready', data }))
+      .then((data) => setPatientView({status: 'ready', data}))
       .catch((error: unknown) => {
         if (isAbortError(error)) return;
-        setPatientView({ status: 'error', message: formatErrorMessage(error) });
-      });
+        setPatientView({status: 'error', message: formatErrorMessage(error)});
+     });
     return () => abortController.abort();
-  }, [selectedId]);
+ }, [selectedId]);
 
   return (
     <div className="min-h-svh bg-background text-foreground">
