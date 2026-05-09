@@ -1,6 +1,6 @@
-# autonomy-health-takehome
+# FHIR Prior Authorization Review Tool
 
-FHIR prior authorization review tool. A clinician-facing UI over bulk FHIR
+A personal project that builds out a clinician-facing UI over bulk FHIR
 data with deterministic eligibility logic and AI-assisted review.
 
 ## Project Structure
